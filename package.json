@@ -1,0 +1,36 @@
+{
+  "name": "sisp_payments_js",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "NODE_ENV=test jest --runInBand"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chuva-io/sisp_payments_js.git"
+  },
+  "keywords": [],
+  "author": "chuva-io",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/chuva-io/sisp_payments_js/issues"
+  },
+  "homepage": "https://github.com/chuva-io/sisp_payments_js#readme",
+  "dependencies": {
+    "btoa": "^1.2.1",
+    "date-fns": "^2.23.0",
+    "js-sha512": "^0.8.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^24.9.1",
+    "@typescript-eslint/eslint-plugin": "^2.6.1",
+    "@typescript-eslint/parser": "^2.6.1",
+    "eslint": "^6.6.0",
+    "eslint-config-airbnb-base": "^14.0.0",
+    "eslint-plugin-import": "^2.18.2",
+    "jest": "^26.1.0",
+    "nodemon": "^2.0.12",
+    "supertest": "^4.0.2"
+  }
+}
