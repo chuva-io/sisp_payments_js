@@ -10,14 +10,23 @@
     "type": "git",
     "url": "git+https://github.com/chuva-io/sisp_payments_js.git"
   },
-  "keywords": ["vinti4", "sisp", "payments"],
+  "keywords": [
+    "vinti4",
+    "sisp",
+    "payments"
+  ],
   "author": "Chuva, LLC",
   "license": "MIT",
   "bugs": {
     "url": "https://github.com/chuva-io/sisp_payments_js/issues"
   },
   "homepage": "https://github.com/chuva-io/sisp_payments_js#readme",
-  "dependencies": {},
+  "dependencies": {
+    "btoa": "^1.2.1",
+    "date-fns": "^2.23.0",
+    "dotenv": "^10.0.0",
+    "js-sha512": "^0.8.0"
+  },
   "devDependencies": {
     "@types/jest": "^24.9.1",
     "@typescript-eslint/eslint-plugin": "^2.6.1",
