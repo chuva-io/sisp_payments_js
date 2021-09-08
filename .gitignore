@@ -1,0 +1,14 @@
+.DS_Store
+
+# NPM
+node_modules
+package-lock.json
+
+# App
+.env
+tmp/
+__tests__/coverage/
+
+# Editors
+.idea/
+.vscode
