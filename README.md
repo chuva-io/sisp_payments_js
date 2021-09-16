@@ -44,3 +44,38 @@ const webhookUrl = 'https://samba.chuva.io/webhooks/sisp-payment';
 
 const htmlForm = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
 ```
+
+## Validate Payment Processing Status (convenience method)
+Check whether or not a payment was processed successfully.
+**Note:** This method is provided as a convenience. See the SISP documentation for the request structure.
+
+### Usage
+Pass the Webhook request body to `validatePayment`. Returns an error object containing `code` and `description` if there is an error, otherwise returns `undefined`.
+
+```js
+validatePayment(responseBody)
+```
+
+#### Possible Errors
+| Code: `string`  | Description: `string`               |
+|-------|:----------------------------------------------|
+| 001   | Payment processing error: Invalid fingerprint |
+| 002   | Payment processing error: Cancelled by user   |
+| 003   | Payment processing error: Processing error    |
+
+### Example
+
+```js
+ app.post("/webhook-handler", (request, response) => {
+     const error = sisp.validatePayment(request.body);
+
+     if(error === undefined) {
+         // Payment processed successfully
+     }
+     else {
+         // Payment processing error
+         console.log(error.code);
+         console.log(error.description);
+     }
+ }
+```
