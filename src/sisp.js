@@ -1,6 +1,7 @@
 const { format: formatDate } = require('date-fns');
 const sha512 = require('js-sha512');
 const btoa = require('btoa');
+const PAYMENT_ERRORS = require('./utils/paymentErrors');
 
 const toBase64 = (u8) => btoa(String.fromCharCode.apply(null, u8));
 
@@ -29,6 +30,7 @@ const generateFingerprint = (
 
   return sha512ToBase64(toHash);
 };
+
 class Sisp {
   /**
    * CONFIGURE SISP CREDENTIALS
@@ -103,6 +105,99 @@ class Sisp {
     return formHtml;
   };
 
+  #generateResponseFingerprint = (
+    posAutCode,
+    messageType,
+    clearingPeriod,
+    transactionID,
+    merchantReference,
+    merchantSession,
+    amount,
+    messageID,
+    pan,
+    merchantResponse,
+    timestamp,
+    reference,
+    entity,
+    clientReceipt,
+    additionalErrorMessage
+  ) => {
+    let token = '';
+    token += sha512ToBase64(posAutCode);
+    token += messageType.trim();
+    token += clearingPeriod.replace(/ /g, '');
+    token += transactionID.replace(/ /g, '');
+    token += merchantReference.trim();
+    token += merchantSession.trim();
+    token += Math.trunc(amount * 1000);
+    token += messageID.trim();
+    token += pan.trim();
+    token += merchantResponse.trim();
+    token += timestamp;
+    token += clientReceipt.trim();
+    token += additionalErrorMessage.trim();
+
+    if (entity) {
+      token += Number(entity.trim());
+    }
+
+    if (reference) {
+      token += Number(reference.trim());
+    }
+
+    return sha512ToBase64(token);
+  };
+
+  /**
+   * VALIDATE PAYMENT RESPONSE
+   * @param {Object} responseBody - Required - This is the payment response returned by SISP.
+   *
+   * @returns {Object} response - This should return an object containing payment information.
+   * @returns {Number} response.code - This code should be 200 if payment was processed successfully, otherwise it will be 400 or 500
+   * @returns {String} response.message - This should be a message about the payment.
+   * @returns {Object} response.data - This should be the same data returned by SISP, but it will only be returned if the payment is successfully processed, otherwise it will be undefined.
+   */
+  validatePayment = (responseBody) => {
+    // SUCCESS RESPONSE CONSTANTS
+    const successMessageTypes = ["8", "10", "M", "P"];
+
+    if (successMessageTypes.includes(responseBody.messageType)) {
+      const posAutCode = this.posAutCode;
+      // Validate fingerprint of the result
+      const calculatedFingerPrint = this.#generateResponseFingerprint(
+        posAutCode,
+        responseBody.messageType,
+        responseBody.merchantRespCP,
+        responseBody.merchantRespTid,
+        responseBody.merchantRespMerchantRef,
+        responseBody.merchantRespMerchantSession,
+        responseBody.merchantRespPurchaseAmount,
+        responseBody.merchantRespMessageID,
+        responseBody.merchantRespPan,
+        responseBody.merchantResp,
+        responseBody.merchantRespTimeStamp,
+        responseBody.merchantRespReferenceNumber,
+        responseBody.merchantRespEntityCode,
+        responseBody.merchantRespClientReceipt,
+        responseBody.merchantRespAdditionalErrorMessage.trim(),
+        responseBody.merchantRespReloadCode
+      );
+
+      // Validade success fingerprint
+      if (responseBody.resultFingerPrint === calculatedFingerPrint) {
+        // Handle Successful Payment
+        return;
+      } else {
+        return PAYMENT_ERRORS.fingerprint;
+      }
+    }
+    else if (responseBody.UserCancelled === 'true') {
+      return PAYMENT_ERRORS.cancelled;
+    }
+    else {
+      return PAYMENT_ERRORS.processing;
+    }
+  };
 };
 
 module.exports = Sisp;
