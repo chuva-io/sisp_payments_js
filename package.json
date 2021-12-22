@@ -1,8 +1,8 @@
 {
   "name": "sisp_payments",
-  "version": "0.0.1",
-  "description": "",
-  "main": "index.js",
+  "version": "1.0.0",
+  "description": "This module simplifies getting started with processing Vinti4, Visa, and Mastercard payments using SISP on Node.js.",
+  "main": "./src/index.js",
   "scripts": {
     "test": "NODE_ENV=test jest --runInBand"
   },
