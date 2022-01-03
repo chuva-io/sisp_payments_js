@@ -9,6 +9,7 @@ This module simplifies getting started with processing Vinti4, Visa, and Masterc
 // Credentials that should be provided by SISP
 const posID = "";
 const posAutCode = "";
+const url = "";
 ```
 These credentials are used to allow you to process the payment using SISP payment services.
 
@@ -22,8 +23,9 @@ const Sisp = require('sisp-payments');
 
 const posID = 900512;
 const posAutCode = "123456789ssA";
+const url = "https://mc.vinti4net.cv/payments";
 
-const sisp = new Sisp({ posID, posAutCode });
+const sisp = new Sisp({ posID, posAutCode, url });
 
 ```
 ## Generate Payment Request Form
