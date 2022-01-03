@@ -37,10 +37,12 @@ class Sisp {
    * @property {Object} credential - Required - This is the payment payment credentials provided by SISP to allow us to process payments.
    * @property {String} credential.posId - posID provided by SISP
    * @property {String} credential.posAutCode - posAutCode provided by SISP
+   * @property {String} credential.url - sispUrl provided by SISP to handle the payments
    */
-  constructor({ posID, posAutCode }) {
+  constructor({ posID, posAutCode, url }) {
     this.posID = posID;
     this.posAutCode = posAutCode;
+    this.url = url;
   };
 
   /**
@@ -53,12 +55,12 @@ class Sisp {
   generatePaymentRequestForm = (referenceId, total, webhookUrl) => {
     const posID = this.posID;
     const posAutCode = this.posAutCode;
+    const url = this.url;
+
     const CVE_CURRENCY_CODE = '132';
 
     const merchantSession = `S${formatDate(new Date(), 'yyyyMMddHHmmss')}`;
     const dateTime = formatDate(new Date(), 'yyyy-MM-dd HH:mm:ss');
-
-    const SISP_URL = 'https://mc.vinti4net.cv/Client_VbV_v2/biz_vbv_clientdata.jsp';
 
     const formData = {
       transactionCode: '1',
@@ -90,7 +92,7 @@ class Sisp {
       formData.referenceNumber
     );
 
-    const postURL = `${SISP_URL}?FingerPrint=${encodeURIComponent(formData.fingerprint)}&TimeStamp=${encodeURIComponent(formData.timeStamp)}&FingerPrintVersion=${encodeURIComponent(formData.fingerprintversion)}`;
+    const postURL = `${url}?FingerPrint=${encodeURIComponent(formData.fingerprint)}&TimeStamp=${encodeURIComponent(formData.timeStamp)}&FingerPrintVersion=${encodeURIComponent(formData.fingerprintversion)}`;
 
     // Create form to POST to SISP
     let formHtml = '<html><head><title>Pagamento Vinti4</title></head><body onload=\'autoPost()\'><div><h5>Processando...</h5>';
