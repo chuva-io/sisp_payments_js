@@ -15,6 +15,13 @@ These credentials are used to allow you to process the payment using SISP paymen
 
 # Getting Started
 
+## Quick Overview
+You can install this package using `npm` or `yarn` by running one of the following commands:
+```bash
+$ npm install @chuva.io/sisp
+# OR
+$ yarn add @chuva.io/sisp
+```
 ## Module Configuration
 Import `sisp-payments` and create a new instance using your credentials. (obtained from SISP):
 
