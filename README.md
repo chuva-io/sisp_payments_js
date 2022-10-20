@@ -65,6 +65,8 @@ Pass the Webhook request body to `validatePayment`. Returns an error object cont
 validatePayment(responseBody)
 ```
 
+`Note`: The responseBody should be of type `x-www-form-urlencoded` as provided by SISP.
+
 #### Possible Errors
 | Code: `string`  | Description: `string`               |
 |-------|:----------------------------------------------|

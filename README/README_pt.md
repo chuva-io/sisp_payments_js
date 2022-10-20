@@ -61,6 +61,8 @@ Passe o corpo da requisição do Webhook para `validatePayment`. Retorna um obje
 validatePayment(responseBody)
 ```
 
+`Nota`: O responseBody deve ser do tipo `x-www-form-urlencoded` conforme fornecido pelo SISP.
+
 #### Possíveis erros
 
 | Code: `string`  | Description: `string`               |
