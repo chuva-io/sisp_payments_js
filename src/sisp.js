@@ -2,6 +2,8 @@ const { format: formatDate } = require('date-fns');
 const sha512 = require('js-sha512');
 const btoa = require('btoa');
 const PAYMENT_ERRORS = require('./utils/paymentErrors');
+const FORMAT_ERRORS = require('./utils/formatErrors');
+const qs = require('qs');
 
 const toBase64 = (u8) => btoa(String.fromCharCode.apply(null, u8));
 
@@ -163,37 +165,45 @@ class Sisp {
     // SUCCESS RESPONSE CONSTANTS
     const successMessageTypes = ["8", "10", "M", "P"];
 
-    if (successMessageTypes.includes(responseBody.messageType)) {
+    // Expected responseBody format is x-www-form-urlencoded string
+    if (typeof responseBody != 'string') {
+      return FORMAT_ERRORS.invalid;
+    }
+
+    // Parse x-www-form-urlencoded response body to JSON format
+    const responseBodyObject = qs.parse(responseBody);
+
+    if (successMessageTypes.includes(responseBodyObject.messageType)) {
       const posAutCode = this.posAutCode;
       // Validate fingerprint of the result
       const calculatedFingerPrint = this.#generateResponseFingerprint(
         posAutCode,
-        responseBody.messageType,
-        responseBody.merchantRespCP,
-        responseBody.merchantRespTid,
-        responseBody.merchantRespMerchantRef,
-        responseBody.merchantRespMerchantSession,
-        responseBody.merchantRespPurchaseAmount,
-        responseBody.merchantRespMessageID,
-        responseBody.merchantRespPan,
-        responseBody.merchantResp,
-        responseBody.merchantRespTimeStamp,
-        responseBody.merchantRespReferenceNumber,
-        responseBody.merchantRespEntityCode,
-        responseBody.merchantRespClientReceipt,
-        responseBody.merchantRespAdditionalErrorMessage.trim(),
-        responseBody.merchantRespReloadCode
+        responseBodyObject.messageType,
+        responseBodyObject.merchantRespCP,
+        responseBodyObject.merchantRespTid,
+        responseBodyObject.merchantRespMerchantRef,
+        responseBodyObject.merchantRespMerchantSession,
+        responseBodyObject.merchantRespPurchaseAmount,
+        responseBodyObject.merchantRespMessageID,
+        responseBodyObject.merchantRespPan,
+        responseBodyObject.merchantResp,
+        responseBodyObject.merchantRespTimeStamp,
+        responseBodyObject.merchantRespReferenceNumber,
+        responseBodyObject.merchantRespEntityCode,
+        responseBodyObject.merchantRespClientReceipt,
+        responseBodyObject.merchantRespAdditionalErrorMessage.trim(),
+        responseBodyObject.merchantRespReloadCode
       );
 
       // Validade success fingerprint
-      if (responseBody.resultFingerPrint === calculatedFingerPrint) {
+      if (responseBodyObject.resultFingerPrint === calculatedFingerPrint) {
         // Handle Successful Payment
         return;
       } else {
         return PAYMENT_ERRORS.fingerprint;
       }
     }
-    else if (responseBody.UserCancelled === 'true') {
+    else if (responseBodyObject.UserCancelled === 'true') {
       return PAYMENT_ERRORS.cancelled;
     }
     else {

@@ -24,7 +24,8 @@
   "dependencies": {
     "btoa": "^1.2.1",
     "date-fns": "^2.23.0",
-    "js-sha512": "^0.8.0"
+    "js-sha512": "^0.8.0",
+    "qs": "^6.11.0"
   },
   "devDependencies": {
     "@types/jest": "^24.9.1",
