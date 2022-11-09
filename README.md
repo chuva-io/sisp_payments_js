@@ -54,6 +54,52 @@ const webhookUrl = 'https://samba.chuva.io/webhooks/sisp-payment';
 const htmlForm = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
 ```
 
+## Generate Service Payment Request Form
+```js
+sisp.generateServicePaymentRequestForm(referenceId, total, webhookUrl, entityCode, referenceNumber);
+```
+Generates and returns an HTML form that can be used to process service payments.
+
+* `referenceId`: Client-generated payment reference ID. This value is sent via a `POST` request to the `webhookUrl` and allows the client to correlate the payment request and response.
+* `total`: Payment amount (in CVE).
+* `webhookUrl`: The url where SISP should send the payment response. You should expect a `POST` request with payment information in the body. See the SISP [documentation]( https://www.vinti4.cv/documentation.aspx?id=682) for more information.
+* `entityCode`: The code of the entity that will receive the payment.
+* `referenceNumber`: The reference number of the invoice to be paid.
+
+### Example
+```js
+const referenceId = 'abc-123';
+const total = 1200;
+const webhookUrl = 'https://samba.chuva.io/webhooks/sisp-payment';
+const entityCode = '6';
+const referenceNumber = '216465697';
+
+const htmlForm = sisp.generateServicePaymentRequestForm(referenceId, total, webhookUrl, entityCode, referenceNumber);
+```
+
+## Generate Recharge Request Form
+```js
+sisp.generateRechargeRequestForm(referenceId, total, webhookUrl, entityCode, phoneNumber);
+```
+Generates and returns an HTML form that can be used to process phone recharge.
+
+* `referenceId`: Client-generated payment reference ID. This value is sent via a `POST` request to the `webhookUrl` and allows the client to correlate the payment request and response.
+* `total`: Payment amount (in CVE).
+* `webhookUrl`: The url where SISP should send the payment response. You should expect a `POST` request with payment information in the body. See the SISP [documentation]( https://www.vinti4.cv/documentation.aspx?id=682) for more information.
+* `entityCode`: The code of the entity that will receive the payment.
+* `phoneNumber`: The phone number to be recharged.
+
+### Example
+```js
+const referenceId = 'abc-123';
+const total = 1200;
+const webhookUrl = 'https://samba.chuva.io/webhooks/sisp-payment';
+const entityCode = '2';
+const phoneNumber = '9573234';
+
+const htmlForm = sisp.generateRechargeRequestForm(referenceId, total, webhookUrl, entityCode, phoneNumber);
+```
+
 ## Validate Payment Processing Status (convenience method)
 Check whether or not a payment was processed successfully.
 **Note:** This method is provided as a convenience. See the SISP documentation for the request structure.
@@ -66,6 +112,13 @@ validatePayment(responseBody)
 ```
 
 `Note`: The responseBody should be of type `x-www-form-urlencoded` as provided by SISP.
+
+#### Possible success messageTypes per transactionCode
+| Transaction: `string`  | transactionCode: `string` | messageType: `string` |
+|------------------------|---------------------------|-----------------------|
+| Purchase               |             1             |           8           |
+| Service Payment        |             2             |           P           |
+| Phone recharge         |             3             |           M           |
 
 #### Possible Errors
 | Code: `string`  | Description: `string`               |
