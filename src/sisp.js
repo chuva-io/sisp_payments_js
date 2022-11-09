@@ -3,6 +3,7 @@ const sha512 = require('js-sha512');
 const btoa = require('btoa');
 const PAYMENT_ERRORS = require('./utils/paymentErrors');
 const FORMAT_ERRORS = require('./utils/formatErrors');
+const TRANSACTION_CODES = require('./constants/transactionCodes');
 const qs = require('qs');
 
 const toBase64 = (u8) => btoa(String.fromCharCode.apply(null, u8));
@@ -48,13 +49,26 @@ class Sisp {
   };
 
   /**
-   * GENERATE PAYMENT REQUEST FORM
+   * GENERATE REQUEST FORM
    * @param {String} referenceId - Required - This is the payment reference. In this case, we need to know which payment was processed when the SISP returns the payment response.
    * @param {Number} total - Required - This is the amount SISP should process the payment.
    * @param {String} webhookUrl - Required - This is the URL the user should be contacted by SISP for payment response.
+   * @param {Object} requestFormOptions - Optional - This is the options for the payment form to be generated.
+   * @param {String} requestFormOptions.transactionCode - This is to specify the type of transaction to be made.
+   * 1 means purchase;
+   * 2 means service payment;
+   * 3 means phone recharge.
+   * @param {String} requestFormOptions.entityCode - This is the code of the entity that will receive the payment.
+   * It should be present when the transactionCode is equal to 2 or 3.
+   * It is not required when transactionCode is equal to 1.
+   * @param {String} requestFormOptions.referenceNumber - This is the reference number of the service to be paid.
+   * When transactionCode is equal to 2 the reference number is the reference number of the invoice to be paid.
+   * When transactionCode is equal to 3, the reference number should be the phone number to be recharged.
+   * It should be present when the transactionCode is equal to 2 or 3.
+   * It is not required when transactionCode is equal to 1.
    * @returns {Document} response - HTML Form to process payments
    */
-  generatePaymentRequestForm = (referenceId, total, webhookUrl) => {
+  #generateRequestForm = (referenceId, total, webhookUrl, requestFormOptions = { transactionCode: '', entityCode: '', referenceNumber: '' }) => {
     const posID = this.posID;
     const posAutCode = this.posAutCode;
     const url = this.url;
@@ -64,8 +78,10 @@ class Sisp {
     const merchantSession = `S${formatDate(new Date(), 'yyyyMMddHHmmss')}`;
     const dateTime = formatDate(new Date(), 'yyyy-MM-dd HH:mm:ss');
 
+    const { transactionCode, entityCode, referenceNumber } = requestFormOptions;
+
     const formData = {
-      transactionCode: '1',
+      transactionCode: transactionCode ? transactionCode : TRANSACTION_CODES.purchase,
       posID,
       merchantRef: referenceId,
       merchantSession,
@@ -76,8 +92,8 @@ class Sisp {
       languageMessages: 'pt',
       timeStamp: dateTime,
       fingerprintversion: '1',
-      entityCode: '',
-      referenceNumber: ''
+      entityCode: entityCode ? entityCode : '',
+      referenceNumber: referenceNumber ? referenceNumber : ''
     };
 
     // GENERATE FINGERPRINT AND ADD TO SHIPPING DATA
@@ -109,6 +125,53 @@ class Sisp {
     return formHtml;
   };
 
+  /**
+   * GENERATE PAYMENT REQUEST FORM
+   * @param {String} referenceId - Required - This is the payment reference. In this case, we need to know which payment was processed when the SISP returns the payment response.
+   * @param {Number} total - Required - This is the amount SISP should process the payment.
+   * @param {String} webhookUrl - Required - This is the URL the user should be contacted by SISP for payment response.
+   * @returns {Document} response - HTML Form to process payments
+   */
+  generatePaymentRequestForm = (referenceId, total, webhookUrl) => {
+    return this.#generateRequestForm(referenceId, total, webhookUrl, {
+      transactionCode: TRANSACTION_CODES.purchase
+    });
+  };
+
+  /**
+   * GENERATE SERVICE PAYMENT REQUEST FORM
+   * @param {String} referenceId - Required - This is the payment reference. In this case, we need to know which payment was processed when the SISP returns the payment response.
+   * @param {Number} total - Required - This is the amount SISP should process the payment.
+   * @param {String} webhookUrl - Required - This is the URL the user should be contacted by SISP for payment response.
+   * @param {String} entityCode - Required - This is the code of the entity that will receive the payment.
+   * @param {String} referenceNumber - Required - This is the reference number of the service to be paid.
+   * @returns {Document} response - HTML Form to process payments
+   */
+  generateServicePaymentRequestForm = (referenceId, total, webhookUrl, entityCode, referenceNumber) => {
+    return this.#generateRequestForm(referenceId, total, webhookUrl, {
+      transactionCode: TRANSACTION_CODES.service_payment,
+      entityCode,
+      referenceNumber
+    });
+  };
+
+  /**
+   * GENERATE RECHARGE REQUEST FORM
+   * @param {String} referenceId - Required - This is the payment reference. In this case, we need to know which payment was processed when the SISP returns the payment response.
+   * @param {Number} total - Required - This is the amount SISP should process the payment.
+   * @param {String} webhookUrl - Required - This is the URL the user should be contacted by SISP for payment response.
+   * @param {String} entityCode - Required - This is the code of the entity that will receive the payment.
+   * @param {String} phoneNumber - Required - This is the phone number to be recharged.
+   * @returns {Document} response - HTML Form to process payments
+   */
+  generateRechargeRequestForm = (referenceId, total, webhookUrl, entityCode, phoneNumber) => {
+    return this.#generateRequestForm(referenceId, total, webhookUrl, {
+      transactionCode: TRANSACTION_CODES.phone_recharge,
+      entityCode,
+      referenceNumber: phoneNumber
+    });
+  };
+
   #generateResponseFingerprint = (
     posAutCode,
     messageType,
@@ -124,7 +187,8 @@ class Sisp {
     reference,
     entity,
     clientReceipt,
-    additionalErrorMessage
+    additionalErrorMessage,
+    reloadCode
   ) => {
     let token = '';
     token += sha512ToBase64(posAutCode);
@@ -138,16 +202,18 @@ class Sisp {
     token += pan.trim();
     token += merchantResponse.trim();
     token += timestamp;
-    token += clientReceipt.trim();
-    token += additionalErrorMessage.trim();
+
+    if (reference) {
+      token += Number(reference.trim());
+    }
 
     if (entity) {
       token += Number(entity.trim());
     }
 
-    if (reference) {
-      token += Number(reference.trim());
-    }
+    token += clientReceipt.trim();
+    token += additionalErrorMessage.trim();
+    token += reloadCode.trim();
 
     return sha512ToBase64(token);
   };
@@ -163,7 +229,7 @@ class Sisp {
    */
   validatePayment = (responseBody) => {
     // SUCCESS RESPONSE CONSTANTS
-    const successMessageTypes = ["8", "10", "M", "P"];
+    const successMessageTypes = ["8", "M", "P"];
 
     // Expected responseBody format is x-www-form-urlencoded string
     if (typeof responseBody != 'string') {
