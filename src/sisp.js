@@ -4,6 +4,7 @@ const btoa = require('btoa');
 const PAYMENT_ERRORS = require('./utils/paymentErrors');
 const FORMAT_ERRORS = require('./utils/formatErrors');
 const TRANSACTION_CODES = require('./constants/transactionCodes');
+const SUCCESS_MESSAGE_TYPES = require('./constants/successMessageTypes');
 const qs = require('qs');
 
 const toBase64 = (u8) => btoa(String.fromCharCode.apply(null, u8));
@@ -20,7 +21,8 @@ const generateFingerprint = (
   currency,
   transactionCode,
   entityCode,
-  referenceNumber
+  referenceNumber,
+  token
 ) => {
   let toHash = `${sha512ToBase64(posAutCode) + timestamp + (Number(parseFloat(amount) * 1000))}${merchantRef}${merchantSession.trim()}${posID}${currency.trim()}${transactionCode.trim()}`;
 
@@ -29,6 +31,10 @@ const generateFingerprint = (
   }
   if (referenceNumber) {
     toHash += Number(referenceNumber.trim());
+  }
+
+  if (token) {
+    toHash += token.trim();
   }
 
   return sha512ToBase64(toHash);
@@ -68,7 +74,7 @@ class Sisp {
    * It is not required when transactionCode is equal to 1.
    * @returns {Document} response - HTML Form to process payments
    */
-  #generateRequestForm = (referenceId, total, webhookUrl, requestFormOptions = { transactionCode: '', entityCode: '', referenceNumber: '' }) => {
+  #generateRequestForm = (referenceId, total, webhookUrl, requestFormOptions = { transactionCode: '', entityCode: '', referenceNumber: '' }, token) => {
     const posID = this.posID;
     const posAutCode = this.posAutCode;
     const url = this.url;
@@ -85,6 +91,7 @@ class Sisp {
       posID,
       merchantRef: referenceId,
       merchantSession,
+      token: token ? token : '',
       amount: total,
       currency: CVE_CURRENCY_CODE,
       is3DSec: '1',
@@ -107,7 +114,8 @@ class Sisp {
       formData.currency,
       formData.transactionCode,
       formData.entityCode,
-      formData.referenceNumber
+      formData.referenceNumber,
+      formData.token
     );
 
     const postURL = `${url}?FingerPrint=${encodeURIComponent(formData.fingerprint)}&TimeStamp=${encodeURIComponent(formData.timeStamp)}&FingerPrintVersion=${encodeURIComponent(formData.fingerprintversion)}`;
@@ -172,7 +180,77 @@ class Sisp {
     });
   };
 
-  #generateResponseFingerprint = (
+  /**
+   * GENERATE TOKEN ENROLLMENT REQUEST FORM
+   * @param {String} referenceId - Required - This is the payment reference. In this case, we need to know which payment was processed when the SISP returns the payment response.
+   * @param {Number} total - Required - This is the amount SISP should process the payment.
+   * @param {String} webhookUrl - Required - This is the URL the user should be contacted by SISP for payment response.
+   * @returns {Document} response - HTML Form to process payments
+   */
+  generateTokenEnrollmentRequestForm = (referenceId, total, webhookUrl) => {
+    return this.#generateRequestForm(referenceId, total, webhookUrl, {
+      transactionCode: TRANSACTION_CODES.token_enrollment
+    });
+  };
+
+  /**
+   * GENERATE TOKEN CANCEL REQUEST FORM
+   * @param {String} referenceId - Required - This is the payment reference. In this case, we need to know which payment was processed when the SISP returns the payment response.
+   * @param {String} webhookUrl - Required - This is the URL the user should be contacted by SISP for payment response.
+   * @returns {Document} response - HTML Form to process payments
+   */
+   generateTokenCancelRequestForm = (referenceId, webhookUrl, token) => {
+    return this.#generateRequestForm(referenceId, 0, webhookUrl, {
+      transactionCode: TRANSACTION_CODES.token_cancel
+    }, token);
+  };
+
+  /**
+   * GENERATE TOKEN PAYMENT REQUEST FORM
+   * @param {String} referenceId - Required - This is the payment reference. In this case, we need to know which payment was processed when the SISP returns the payment response.
+   * @param {Number} total - Required - This is the amount SISP should process the payment.
+   * @param {String} webhookUrl - Required - This is the URL the user should be contacted by SISP for payment response.
+   * @returns {Document} response - HTML Form to process payments
+   */
+  generateTokenPurchaseRequestForm = (referenceId, total, webhookUrl, token) => {
+    return this.#generateRequestForm(referenceId, total, webhookUrl, {
+      transactionCode: TRANSACTION_CODES.token_purchase
+    }, token);
+  };
+
+  /**
+   * GENERATE TOKEN SERVICE PAYMENT REQUEST FORM
+   * @param {String} referenceId - Required - This is the payment reference. In this case, we need to know which payment was processed when the SISP returns the payment response.
+   * @param {Number} total - Required - This is the amount SISP should process the payment.
+   * @param {String} webhookUrl - Required - This is the URL the user should be contacted by SISP for payment response.
+   * @param {String} entityCode - Required - This is the code of the entity that will receive the payment.
+   * @param {String} referenceNumber - Required - This is the reference number of the service to be paid.
+   * @returns {Document} response - HTML Form to process payments
+   */
+  generateTokenServicePaymentRequestForm = (referenceId, total, webhookUrl, entityCode, referenceNumber, token) => {
+    return this.#generateRequestForm(referenceId, total, webhookUrl, {
+      transactionCode: TRANSACTION_CODES.service_payment,
+      entityCode,
+      referenceNumber
+    }, token);
+  };
+
+  /**
+   * GENERATE TOKEN RECHARGE REQUEST FORM
+   * @param {String} referenceId - Required - This is the payment reference. In this case, we need to know which payment was processed when the SISP returns the payment response.
+   * @param {Number} total - Required - This is the amount SISP should process the payment.
+   * @param {String} webhookUrl - Required - This is the URL the user should be contacted by SISP for payment response.
+   * @returns {Document} response - HTML Form to process payments
+   */
+  generateTokenRechargeRequestForm = (referenceId, total, webhookUrl, entityCode, phoneNumber, token) => {
+    return this.#generateRequestForm(referenceId, total, webhookUrl, {
+      transactionCode: TRANSACTION_CODES.phone_recharge,
+      entityCode,
+      referenceNumber: phoneNumber
+    }, token);
+  };
+
+  #generateCardPaymentResponseFingerprint = (
     posAutCode,
     messageType,
     clearingPeriod,
@@ -191,17 +269,47 @@ class Sisp {
     reloadCode
   ) => {
     let token = '';
+
     token += sha512ToBase64(posAutCode);
-    token += messageType.trim();
-    token += clearingPeriod.replace(/ /g, '');
-    token += transactionID.replace(/ /g, '');
-    token += merchantReference.trim();
-    token += merchantSession.trim();
-    token += Math.trunc(amount * 1000);
-    token += messageID.trim();
-    token += pan.trim();
-    token += merchantResponse.trim();
+
+    if (messageType) {
+      token += messageType.trim();
+    }
+
+    if (clearingPeriod) {
+      token += clearingPeriod.replace(/ /g, '');
+    }
+
+    if (transactionID) {
+      token += transactionID.replace(/ /g, '');
+    }
+
+    if (merchantReference) {
+      token += merchantReference.trim();
+    }
+
+    if (merchantSession) {
+      token += merchantSession.trim();
+    }
+
+    if (amount) {
+      token += Math.trunc(amount * 1000);
+    }
+
+    if (messageID) {
+      token += messageID.trim();
+    }
+
+    if (pan) {
+      token += pan.trim();
+    }
+
+    if (merchantResponse) {
+      token += merchantResponse.trim();
+    }
+
     token += timestamp;
+
 
     if (reference) {
       token += Number(reference.trim());
@@ -211,9 +319,173 @@ class Sisp {
       token += Number(entity.trim());
     }
 
-    token += clientReceipt.trim();
-    token += additionalErrorMessage.trim();
-    token += reloadCode.trim();
+    if (clientReceipt) {
+      token += clientReceipt.trim();
+    }
+
+    if (additionalErrorMessage) {
+      token += additionalErrorMessage.trim();
+    }
+
+    if (reloadCode) {
+      token += reloadCode.trim();
+    }
+
+    return sha512ToBase64(token);
+  };
+
+  #generateTokenEnrollmentResponseFingerprint = (
+    posAutCode,
+    messageType,
+    merchantReference,
+    merchantSession,
+    messageID,
+    merchantResponse,
+    clearingPeriod,
+    transactionID,
+    timestamp,
+    responseToken,
+    tokenDescription,
+    maxAmountAllowed,
+    maxNumberOfTransactions,
+    limitDate,
+    merchantRespPan
+  ) => {
+    let token = '';
+
+    token += sha512ToBase64(posAutCode);
+
+    if (messageType) {
+      token += messageType.trim();
+    }
+
+    if (merchantReference) {
+      token += merchantReference.trim();
+    }
+
+    if (merchantSession) {
+      token += merchantSession.trim();
+    }
+
+    if (messageID) {
+      token += messageID.trim();
+    }
+
+    if (merchantResponse) {
+      token += merchantResponse.trim();
+    }
+
+    if (clearingPeriod) {
+      token += clearingPeriod.replace(/ /g, '');
+    }
+
+    if (transactionID) {
+      token += transactionID.replace(/ /g, '');
+    }
+
+    token += timestamp;
+
+    if (responseToken) {
+      token += responseToken.trim();
+    }
+
+    if (tokenDescription) {
+      token += tokenDescription.trim();
+    }
+
+    if (maxAmountAllowed) {
+      token += Math.trunc(maxAmountAllowed * 1000);
+    }
+
+    if (maxNumberOfTransactions) {
+      token += maxNumberOfTransactions.trim();
+    }
+
+    if (limitDate) {
+      token += limitDate.split('-').join('');
+    }
+
+    if (merchantRespPan) {
+      token += merchantRespPan.trim().substring(merchantRespPan.length - 4);
+    }
+
+    return sha512ToBase64(token);
+  };
+
+  #generateTokenPaymentResponseFingerprint = (
+    posAutCode,
+    messageType,
+    merchantReference,
+    merchantSession,
+    messageID,
+    merchantResponse,
+    clearingPeriod,
+    transactionID,
+    timestamp,
+    approvalCode,
+    merchantRespPurchaseAmount,
+    merchantRespClientReceipt,
+    merchantRespReloadCode,
+    merchantRespReferenceNumber,
+    merchantRespEntityCode
+  ) => {
+    let token = '';
+
+    token += sha512ToBase64(posAutCode);
+
+    if (messageType) {
+      token += messageType.trim();
+    }
+
+    if (merchantReference) {
+      token += merchantReference.trim();
+    }
+
+    if (merchantSession) {
+      token += merchantSession.trim();
+    }
+
+    if (messageID) {
+      token += messageID.trim();
+    }
+
+    if (merchantResponse) {
+      token += merchantResponse.trim();
+    }
+
+    if (clearingPeriod) {
+      token += clearingPeriod.replace(/ /g, '');
+    }
+
+    if (transactionID) {
+      token += transactionID.replace(/ /g, '');
+    }
+
+    if (approvalCode) {
+      token += approvalCode.trim();
+    }
+
+    if (merchantRespPurchaseAmount) {
+      token += Math.trunc(merchantRespPurchaseAmount * 1000);
+    }
+
+    token += timestamp;
+
+    if (merchantRespClientReceipt) {
+      token += merchantRespClientReceipt.trim();
+    }
+
+    if (merchantRespReloadCode) {
+      token += merchantRespReloadCode.trim();
+    }
+
+    if (merchantRespReferenceNumber) {
+      token += merchantRespReferenceNumber.trim();
+    }
+
+    if (merchantRespEntityCode) {
+      token += merchantRespEntityCode.trim();
+    }
 
     return sha512ToBase64(token);
   };
@@ -229,7 +501,14 @@ class Sisp {
    */
   validatePayment = (responseBody) => {
     // SUCCESS RESPONSE CONSTANTS
-    const successMessageTypes = ["8", "M", "P"];
+    const successMessageTypes = [
+      SUCCESS_MESSAGE_TYPES.purchase,
+      SUCCESS_MESSAGE_TYPES.phone_recharge,
+      SUCCESS_MESSAGE_TYPES.service_payment,
+      SUCCESS_MESSAGE_TYPES.token_enrollment_request,
+      SUCCESS_MESSAGE_TYPES.token_payment,
+      SUCCESS_MESSAGE_TYPES.token_cancel
+    ];
 
     // Expected responseBody format is x-www-form-urlencoded string
     if (typeof responseBody != 'string') {
@@ -242,25 +521,91 @@ class Sisp {
     if (successMessageTypes.includes(responseBodyObject.messageType)) {
       const posAutCode = this.posAutCode;
       // Validate fingerprint of the result
-      const calculatedFingerPrint = this.#generateResponseFingerprint(
-        posAutCode,
-        responseBodyObject.messageType,
-        responseBodyObject.merchantRespCP,
-        responseBodyObject.merchantRespTid,
-        responseBodyObject.merchantRespMerchantRef,
-        responseBodyObject.merchantRespMerchantSession,
-        responseBodyObject.merchantRespPurchaseAmount,
-        responseBodyObject.merchantRespMessageID,
-        responseBodyObject.merchantRespPan,
-        responseBodyObject.merchantResp,
-        responseBodyObject.merchantRespTimeStamp,
-        responseBodyObject.merchantRespReferenceNumber,
-        responseBodyObject.merchantRespEntityCode,
-        responseBodyObject.merchantRespClientReceipt,
-        responseBodyObject.merchantRespAdditionalErrorMessage.trim(),
-        responseBodyObject.merchantRespReloadCode
-      );
 
+      let calculatedFingerPrint = '';
+
+      switch (responseBodyObject.messageType) {
+        case SUCCESS_MESSAGE_TYPES.purchase:
+        case SUCCESS_MESSAGE_TYPES.phone_recharge:
+        case SUCCESS_MESSAGE_TYPES.service_payment:
+          calculatedFingerPrint = this.#generateCardPaymentResponseFingerprint(
+            posAutCode,
+            responseBodyObject.messageType,
+            responseBodyObject.merchantRespCP,
+            responseBodyObject.merchantRespTid,
+            responseBodyObject.merchantRespMerchantRef,
+            responseBodyObject.merchantRespMerchantSession,
+            responseBodyObject.merchantRespPurchaseAmount,
+            responseBodyObject.merchantRespMessageID,
+            responseBodyObject.merchantRespPan,
+            responseBodyObject.merchantResp,
+            responseBodyObject.merchantRespTimeStamp,
+            responseBodyObject.merchantRespReferenceNumber,
+            responseBodyObject.merchantRespEntityCode,
+            responseBodyObject.merchantRespClientReceipt,
+            responseBodyObject.merchantRespAdditionalErrorMessage, 
+            responseBodyObject.merchantRespReloadCode
+          );
+          break;
+        case SUCCESS_MESSAGE_TYPES.token_enrollment_request:
+          calculatedFingerPrint = this.#generateTokenEnrollmentResponseFingerprint(
+            posAutCode,
+            responseBodyObject.messageType,
+            responseBodyObject.merchantRespMerchantRef,
+            responseBodyObject.merchantRespMerchantSession,
+            responseBodyObject.merchantRespMessageID,
+            responseBodyObject.merchantResp,
+            responseBodyObject.merchantRespCP,
+            responseBodyObject.merchantRespTid,
+            responseBodyObject.merchantRespTimeStamp,
+            responseBodyObject.token,
+            responseBodyObject.tokenDescription,
+            responseBodyObject.maxAmountAllowed,
+            responseBodyObject.maxNumberOfTransactions,
+            responseBodyObject.limitDate,
+            responseBodyObject.merchantRespPan
+          );
+          break;
+        case SUCCESS_MESSAGE_TYPES.token_payment:
+          calculatedFingerPrint = this.#generateTokenPaymentResponseFingerprint(
+            posAutCode,
+            responseBodyObject.messageType,
+            responseBodyObject.merchantRespMerchantRef,
+            responseBodyObject.merchantRespMerchantSession,
+            responseBodyObject.merchantRespMessageID,
+            responseBodyObject.merchantResp,
+            responseBodyObject.merchantRespCP,
+            responseBodyObject.merchantRespTid,
+            responseBodyObject.merchantRespTimeStamp,
+            responseBodyObject.approvalCode,
+            responseBodyObject.merchantRespPurchaseAmount,
+            responseBodyObject.merchantRespClientReceipt,
+            responseBodyObject.merchantRespReloadCode,
+            responseBodyObject.merchantRespReferenceNumber,
+            responseBodyObject.merchantRespEntityCode
+          );
+          break;
+        case SUCCESS_MESSAGE_TYPES.token_cancel:
+          calculatedFingerPrint = this.#generateTokenPaymentResponseFingerprint(
+            posAutCode,
+            responseBodyObject.messageType,
+            responseBodyObject.merchantRespMerchantRef,
+            responseBodyObject.merchantRespMerchantSession,
+            responseBodyObject.merchantRespMessageID,
+            responseBodyObject.merchantResp,
+            responseBodyObject.merchantRespCP,
+            responseBodyObject.merchantRespTid,
+            responseBodyObject.merchantRespTimeStamp,
+            responseBodyObject.approvalCode,
+            responseBodyObject.merchantRespPurchaseAmount,
+            responseBodyObject.merchantRespClientReceipt,
+            responseBodyObject.merchantRespReloadCode,
+            responseBodyObject.merchantRespReferenceNumber,
+            responseBodyObject.merchantRespEntityCode
+          );
+          break;
+      }
+      console.log(calculatedFingerPrint)
       // Validade success fingerprint
       if (responseBodyObject.resultFingerPrint === calculatedFingerPrint) {
         // Handle Successful Payment
