@@ -15,11 +15,103 @@ Essas credenciais são usadas para permitir que você processe o pagamento usand
 
 # Iniciando
 
-## Configurando o Módulo 
-Importa `sisp-payments` e crie uma nova instância usando suas credenciais. (obtido do SISP):
+## Configurando o Módulo
+
+### Sisp com 3DSecure
+
+Importa `@chuva/sisp/sisp3DS` e crie uma nova instância usando suas credenciais. (obtido do SISP):
 
 ```js
-const Sisp = require('sisp-payments');
+const Sisp = require('@chuva/sisp/sisp3DS');
+
+const posID = 900512;
+const posAutCode = "123456789ssA";
+const url = "https://mc.vinti4net.cv/3ds_payments_url";
+
+const sisp = new Sisp({ posID, posAutCode, url });
+
+```
+
+#### Gerar formulário de solicitação de pagamento com 3DSec
+
+```js
+sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, userBillingInfo);
+```
+Gera e retorna um formulário HTML que pode ser usado para processar pagamentos com 3DSec.
+
+* `referenceId`: Client-generated payment reference ID. Este valor é enviado através de uma requisição  `POST` para o  `webhookUrl` e permite ao cliente correlacionar a solicitação de pagamento e a resposta.
+* `total`: Valor do pagamento (em CVE).
+* `webhookUrl`: A url para onde o SISP deve enviar a resposta de pagamento. Você deve esperar uma requisição `POST` com informações de pagamento no corpo. Veja a [documentação](https://www.vinti4.cv/documentation.aspx?id=682) do SISP para mais informações.
+* `userBillingInfo`: Este é um objeto que contém informações relacionadas ao usuário que está efetuando o pagamento.
+* `options` - Opcional - Este é um objeto usado para configurar o formulário, como idioma e a moeda.
+* `options.languageMessages` - Opcional - Isto é usado para configurar o idioma para as mensagens de resposta.
+* `options.currencyCode` - Opcional - Isto é para configurar a moeda.
+
+
+##### userBillingInfo field
+
+```js
+{
+    acctID: "Obrigatório - Este é o ID da conta do utilizador",
+    acctInfo: {
+        chAccAgeInd: "Opcional - Isto indica a idade da conta do utilizador, os valores aceitáveis são: 01 - Sem conta, 02 - Conta criada durante a transação, 03 - Conta com menos de 30 dias, 04 - Idade da conta entre 30 e 60 dias, 05 - Conta com mais de 60 dias",
+        chAccChange: "Opcional - Data em que ocorreu qualquer alteração na conta do utilizador. O formato exigido é - yyyyMMdd",
+        chAccDate: "Opcional - Data em que a conta do utilizador foi criada. O formato exigido é - yyyyMMdd",
+        chAccPwChange: "Opcional - Data em que o utilizador alterou sua senha da conta. O formato exigido é - yyyyMMdd",
+        chAccPwChangeInd: "Opcional - Isto indica a idade da senha da conta do utilizador, os valores aceitáveis são: 01 - Sem senha, 02 - senha criada durante a transação, 03 - senha com menos de 30 dias, 04 - idade da senha entre 30 e 60 dias, 05 - senha com mais de 60 dias",
+        suspiciousAccActivity: "Opcional - Isto indica atividade suspeita na conta do utilizador. Indica se o comerciante experimentou atividade suspeita do utilizador em questão (inclui queixas de fraude anteriores). Os valores aceitáveis são: 01 - nenhuma suspeita, 02 - suspeita"
+    },
+    email: "Obrigatório - Endereço de e-mail do titular do cartão",
+    addrMatch: "Opcional - Isto indica se o endereço de cobrança é o mesmo que o endereço de entrega. Os valores aceitáveis são: Y - sim, N - não, no caso de Y os valores preenchidos em billAddr* devem ser os mesmos que os de shipAddr*",
+    billAddrCity: "Opcional - Cidade do endereço de cobrança do titular do cartão",
+    billAddrCountry: "Obrigatório - O país do endereço de cobrança do titular do cartão, deve ser os primeiros 3 dígitos do ISO 3166-1",
+    billAddrLine1: "Opcional - Primeiro endereço de cobrança do titular do cartão",
+    billAddrLine2: "Opcional - Segundo endereço de cobrança do titular do cartão",
+    billAddrLine3: "Opcional - Terceiro endereço de cobrança do titular do cartão",
+    billAddrPostCode: "Opcional - Código postal do endereço de cobrança do titular do cartão",
+    billAddrState: "Opcional - Estado do endereço de cobrança do titular do cartão. Deve ser a subdivisão do país definido no ISO 3166-2",
+    shipAddrCity: "Opcional - Cidade do endereço de entrega do titular do cartão",
+    shipAddrCountry: "Opcional - O país do endereço de entrega do titular do cartão, deve ser os primeiros 3 dígitos do ISO 3166-1",
+    shipAddrLine1: "Opcional - Primeiro endereço de entrega do titular do cartão",
+    shipAddrPostCode: "Opcional - Código postal do endereço de entrega do titular do cartão",
+    shipAddrState: "Opcional - Estado do endereço de entrega do titular do cartão. Deve ser a subdivisão do país definido no ISO 3166-2",
+    workPhone: {
+        cc: "Opcional - Isto indica o código do país do número de telefone, exemplo - 123",
+        subscriber: "Opcional - Isto indica o número de telefone do titular da conta, deve incluir o indicador sem o sinal +, exemplo de um número de telefone de Cabo Verde: 2389573234"
+    },
+    mobilePhone: {
+        cc: "Obrigatório - Isto indica o código do país do número de telefone, exemplo - 123",
+        subscriber: "Obrigatório - Isto indica o número de telefone do titular da conta, deve incluir o indicador sem o sinal +, exemplo de um número de telefone de Cabo Verde: 2389573234"
+    },
+}
+```
+
+##### Exemplo
+```js
+const referenceId = 'abc-123';
+const total = 1200;
+const webhookUrl = 'https://samba.chuva.io/webhooks/sisp-payment';
+
+const userBillingInfo = {
+    acctID: "xpto",
+    email: "carlos@email.com",
+    billAddrCountry: "123",
+    mobilePhone: {
+        // Código de país de Cabo Verde
+        cc: "123",
+        subscriber: "2389573234"
+    },
+};
+
+const htmlForm = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, userBillingInfo);
+```
+
+### Sisp sem 3DSecure
+
+Importa `@chuva/sisp` e crie uma nova instância usando suas credenciais. (obtido do SISP):
+
+```js
+const Sisp = require('@chuva/sisp');
 
 const posID = 900512;
 const posAutCode = "123456789ssA";
@@ -28,7 +120,8 @@ const url = "https://mc.vinti4net.cv/payments";
 const sisp = new Sisp({ posID, posAutCode, url });
 
 ```
-## Gerar formulário de solicitação de pagamento
+#### Gerar formulário de solicitação de pagamento - `Esta função está obsoleta`
+
 ```js
 sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
 ```
@@ -38,7 +131,7 @@ Gera e retorna um formulário HTML que pode ser usado para processar pagamentos.
 * `total`: Valor do pagamento (em CVE).
 * `webhookUrl`: A url para onde o SISP deve enviar a resposta de pagamento. Você deve esperar uma requisição `POST` com informações de pagamento no corpo. Veja a [documentação](https://www.vinti4.cv/documentation.aspx?id=682) do SISP para mais informações.
 
-### Exemplo
+##### Exemplo
 ```js
 const referenceId = 'abc-123';
 const total = 1200;
@@ -47,7 +140,7 @@ const webhookUrl = 'https://samba.chuva.io/webhooks/sisp-payment';
 const htmlForm = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
 ```
 
-## Gerar formulário de solicitação de pagamento de serviço
+#### Gerar formulário de solicitação de pagamento de serviço
 ```js
 sisp.generateServicePaymentRequestForm(referenceId, total, webhookUrl, entityCode, referenceNumber);
 ```
@@ -59,7 +152,7 @@ Gera e retorna um formulário HTML que pode ser usado para processar pagamento d
 * `entityCode`: O código da entidade que receberá o pagamento.
 * `referenceNumber`: O número de referência da fatura a pagar.
 
-### Exemplo
+##### Exemplo
 ```js
 const referenceId = 'abc-123';
 const total = 1200;
@@ -70,7 +163,7 @@ const referenceNumber = '216465697';
 const htmlForm = sisp.generateServicePaymentRequestForm(referenceId, total, webhookUrl, entityCode, referenceNumber);
 ```
 
-## Gerar formulário de solicitação de recarga
+#### Gerar formulário de solicitação de recarga
 ```js
 sisp.generateRechargeRequestForm(referenceId, total, webhookUrl, entityCode, phoneNumber);
 ```
@@ -82,7 +175,7 @@ Gera e retorna um formulário HTML que pode ser usado para processar recarga de 
 * `entityCode`: O código da entidade que receberá o pagamento.
 * `phoneNumber`: O número de telefone a ser recarregado.
 
-### Exemplo
+##### Exemplo
 ```js
 const referenceId = 'abc-123';
 const total = 1200;
@@ -93,7 +186,7 @@ const phoneNumber = '9573234';
 const htmlForm = sisp.generateRechargeRequestForm(referenceId, total, webhookUrl, entityCode, phoneNumber);
 ```
 
-## Gerar formulário de solicitação de token
+#### Gerar formulário de solicitação de token
 ```js
 sisp.generateTokenEnrollmentRequestForm(referenceId, total, webhookUrl);
 ```
@@ -103,7 +196,7 @@ Gera e retorna um formulário HTML que pode ser usado para fazer uma requisiçã
 * `total`: Valor do pagamento (em CVE).
 * `webhookUrl`: A url para onde o SISP deve enviar a resposta da solicitação de token. Você deve esperar uma requisição `POST` com informações da solicitação de token no corpo. Veja a [documentação](https://www.vinti4.cv/documentation.aspx?id=682) do SISP para mais informações.
 
-### Exemplo
+##### Exemplo
 ```js
 const referenceId = 'abc-123';
 const total = 1200;
@@ -112,7 +205,7 @@ const webhookUrl = 'https://samba.chuva.io/webhooks/token-enrollment';
 const htmlForm = sisp.generateTokenEnrollmentRequestForm(referenceId, total, webhookUrl);
 ```
 
-## Gerar formulário de cancelamento de token
+#### Gerar formulário de cancelamento de token
 ```js
 sisp.generateTokenCancelRequestForm(referenceId, webhookUrl, token);
 ```
@@ -122,7 +215,7 @@ Gera e retorna um formulário HTML que pode ser usado para fazer uma requisiçã
 * `webhookUrl`: A url para onde o SISP deve enviar a resposta do cancelamento de token. Você deve esperar uma requisição `POST` com informações de cancelamento de token no corpo. Veja a [documentação](https://www.vinti4.cv/documentation.aspx?id=682) do SISP para mais informações.
 * `token`: O token a ser cancelado. Também é usado para autenticar a solicitação. Este token é recuperado da responta do pedido `token enrollment`.
 
-### Exemplo
+##### Exemplo
 ```js
 const referenceId = 'abc-123';
 const total = 1200;
@@ -133,7 +226,7 @@ const token = '831561583';
 const htmlForm = sisp.generateTokenCancelRequestForm(referenceId, webhookUrl, token);
 ```
 
-## Gerar formulário de pagamento com token
+#### Gerar formulário de pagamento com token
 ```js
 sisp.generateTokenPurchaseRequestForm(referenceId, total, webhookUrl, token);
 ```
@@ -144,7 +237,7 @@ Gera e retorna um formulário HTML que pode ser usado para fazer uma requisiçã
 * `webhookUrl`: A url para onde o SISP deve enviar a resposta do pagamento com token. Você deve esperar uma requisição `POST` com informações do pagamento com token no corpo. Veja a [documentação](https://www.vinti4.cv/documentation.aspx?id=682) do SISP para mais informações.
 * `token`: O token para autenticar o pedido. Este token é recuperado da responta do pedido `token enrollment`.
 
-### Exemplo
+##### Exemplo
 ```js
 const referenceId = 'abc-123';
 const total = 1200;
@@ -155,7 +248,7 @@ const token = '831561583';
 const htmlForm = sisp.generateTokenPurchaseRequestForm(referenceId, total, webhookUrl, token);
 ```
 
-## Gerar formulário de pagamento de serviços com token
+#### Gerar formulário de pagamento de serviços com token
 ```js
 sisp.generateTokenServicePaymentRequestForm(referenceId, total, webhookUrl, entityCode, referenceNumber, token);
 ```
@@ -168,7 +261,7 @@ Gera e retorna um formulário HTML que pode ser usado para fazer uma requisiçã
 * `referenceNumber`: O número de referência da fatura a pagar.
 * `token`: O token para autenticar o pedido. Este token é recuperado da responta do pedido `token enrollment`.
 
-### Exemplo
+##### Exemplo
 ```js
 const referenceId = 'abc-123';
 const total = 1200;
@@ -181,7 +274,7 @@ const token = '831561583';
 const htmlForm = sisp.generateTokenServicePaymentRequestForm(referenceId, total, webhookUrl, entityCode, referenceNumber, token);
 ```
 
-## Gerar formulário de recarga de telefone com token
+#### Gerar formulário de recarga de telefone com token
 ```js
 sisp.generateTokenRechargeRequestForm(referenceId, total, webhookUrl, entityCode, phoneNumber, token);
 ```
@@ -194,7 +287,7 @@ Gera e retorna um formulário HTML que pode ser usado para fazer uma requisiçã
 * `phoneNumber`: O número de telefone a ser recarregado.
 * `token`: O token para autenticar o pedido. Este token é recuperado da responta do pedido `token enrollment`.
 
-### Exemplo
+##### Exemplo
 ```js
 const referenceId = 'abc-123';
 const total = 1200;
