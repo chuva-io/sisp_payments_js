@@ -19,12 +19,12 @@ Essas credenciais são usadas para permitir que você processe o pagamento usand
 
 ### Sisp com 3DSecure
 
-Importa `@chuva/sisp/sisp3DS` e crie uma nova instância usando suas credenciais. (obtido do SISP):
+Importa `@chuva.io/sisp/src/sisp3DS` e crie uma nova instância usando suas credenciais. (obtido do SISP):
 
 ```js
-const Sisp = require('@chuva/sisp/sisp3DS');
+const Sisp = require('@chuva.io/sisp/src/sisp3DS');
 
-const posID = 900512;
+const posID = '900512';
 const posAutCode = "123456789ssA";
 const url = "https://mc.vinti4net.cv/3ds_payments_url";
 

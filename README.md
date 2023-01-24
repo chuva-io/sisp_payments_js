@@ -26,12 +26,12 @@ $ yarn add @chuva.io/sisp
 
 ### Sisp with 3DSecure
 
-Import `@chuva/sisp/sisp3DS` and create a new instance using your credentials. (obtained from SISP):
+Import `@chuva.io/sisp/src/sisp3DS` and create a new instance using your credentials. (obtained from SISP):
 
 ```js
-const Sisp = require('@chuva.io/sisp/sisp3DS');
+const Sisp = require('@chuva.io/sisp/src/sisp3DS');
 
-const posID = 900512;
+const posID = '900512';
 const posAutCode = "123456789ssA";
 const url = "https://mc.vinti4net.cv/3ds_payments_url";
 
