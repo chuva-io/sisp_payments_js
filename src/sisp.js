@@ -41,7 +41,7 @@ class Sisp {
    * @param {String} token - Optional - This is the token used to authenticate the requests that use tokenization.
    * @returns {Document} response - HTML Form to process payments
    */
-  generateRequestForm(referenceId, total, webhookUrl, requestFormOptions = {}, token) {
+  #generateRequestForm(referenceId, total, webhookUrl, requestFormOptions = {}, token) {
     const {
       posID,
       posAutCode,
