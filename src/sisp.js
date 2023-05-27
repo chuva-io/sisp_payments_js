@@ -11,16 +11,14 @@ const qs = require('qs');
 class Sisp {
   /**
    * CONFIGURE SISP CREDENTIALS
-   * @property {Object} credential - Required - This is the payment payment credentials provided by SISP to allow us to process payments.
-   * @property {String} credential.posId - posID provided by SISP
-   * @property {String} credential.posAutCode - posAutCode provided by SISP
-   * @property {String} credential.url - sispUrl provided by SISP to handle the payments
+   * @param {Object} credentials - Required - These are the payment credentials provided by SISP to allow us to process payments.
+   * @param {String} credentials.posID - posID provided by SISP
+   * @param {String} credentials.posAutCode - posAutCode provided by SISP
+   * @param {String} credentials.url - sispUrl provided by SISP to handle the payments
    */
-  constructor({ posID, posAutCode, url }) {
-    this.posID = posID;
-    this.posAutCode = posAutCode;
-    this.url = url;
-  };
+  constructor(credentials) {
+    this.credentials = credentials;
+  }
 
   /**
    * GENERATE REQUEST FORM
@@ -43,24 +41,30 @@ class Sisp {
    * @param {String} token - Optional - This is the token used to authenticate the requests that use tokenization.
    * @returns {Document} response - HTML Form to process payments
    */
-  #generateRequestForm = (referenceId, total, webhookUrl, requestFormOptions = { transactionCode: '', entityCode: '', referenceNumber: '' }, token) => {
-    const posID = this.posID;
-    const posAutCode = this.posAutCode;
-    const url = this.url;
+  generateRequestForm(referenceId, total, webhookUrl, requestFormOptions = {}, token) {
+    const {
+      posID,
+      posAutCode,
+      url
+    } = this.credentials;
 
     const CVE_CURRENCY_CODE = '132';
 
     const merchantSession = `S${formatDate(new Date(), 'yyyyMMddHHmmss')}`;
     const dateTime = formatDate(new Date(), 'yyyy-MM-dd HH:mm:ss');
 
-    const { transactionCode, entityCode, referenceNumber } = requestFormOptions;
+    const {
+      transactionCode = TRANSACTION_CODES.purchase,
+      entityCode = '',
+      referenceNumber = ''
+    } = requestFormOptions;
 
     const formData = {
-      transactionCode: transactionCode ? transactionCode : TRANSACTION_CODES.purchase,
+      transactionCode,
       posID,
       merchantRef: referenceId,
       merchantSession,
-      token: token ? token : '',
+      token: token || '',
       amount: total,
       currency: CVE_CURRENCY_CODE,
       is3DSec: '1',
@@ -68,8 +72,8 @@ class Sisp {
       languageMessages: 'pt',
       timeStamp: dateTime,
       fingerprintversion: '1',
-      entityCode: entityCode ? entityCode : '',
-      referenceNumber: referenceNumber ? referenceNumber : ''
+      entityCode,
+      referenceNumber
     };
 
     // GENERATE FINGERPRINT AND ADD TO SHIPPING DATA
