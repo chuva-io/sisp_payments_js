@@ -121,7 +121,7 @@ const successDataForTokenEnrollmentRequestForm = `
     <script>function autoPost(){document.forms[0].submit();}</script>
   </body>
 </html>
-`
+`;
 
 const successDataForTokenPurchaseRequestForm = `
 <html>
@@ -150,7 +150,7 @@ const successDataForTokenPurchaseRequestForm = `
       <script>function autoPost(){document.forms[0].submit();}</script>
    </body>
 </html>
-`
+`;
 
 const successDataForTokenCancelRequestForm = `
 <html>
@@ -179,7 +179,7 @@ const successDataForTokenCancelRequestForm = `
       <script>function autoPost(){document.forms[0].submit();}</script>
    </body>
 </html>
-`
+`;
 
 const successDataForTokenServicePaymentForm = `
 <html>
@@ -208,7 +208,7 @@ const successDataForTokenServicePaymentForm = `
       <script>function autoPost(){document.forms[0].submit();}</script>
    </body>
 </html>
-`
+`;
 
 const successDataForTokenRechargeRequestForm = `
 <html>
@@ -237,7 +237,7 @@ const successDataForTokenRechargeRequestForm = `
       <script>function autoPost(){document.forms[0].submit();}</script>
    </body>
 </html>
-`
+`;
 
 describe('SISP Payment', () => {
   beforeEach(async () => {
@@ -266,50 +266,50 @@ describe('SISP Payment', () => {
       it('should return the correct form for purchase', () => {
         const referenceId = '1:3:testForm';
         const total = 89;
-  
+
         const sisp = new Sisp({ posID, posAutCode, url });
         const result = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
-  
+
         const expected = successDataForPurchaseForm.replace(/\s/g, '');
-  
+
         expect(result.replace(/\s/g, '')).toEqual(expected);
       });
-  
+
       it('should return the correct form for service payment', () => {
         const referenceId = '1:3:testForm';
         const total = 89;
-  
+
         const sisp = new Sisp({ posID, posAutCode, url });
-  
+
         const entityCode = '6';
         const referenceNumber = '227045251';
-  
+
         const result = sisp.generateServicePaymentRequestForm(referenceId, total, webhookUrl, entityCode, referenceNumber);
-  
+
         const expected = successDataForServicePaymentForm.replace(/\s/g, '');
-  
+
         expect(result.replace(/\s/g, '')).toEqual(expected);
       });
-  
+
       it('should return the correct form for phone recharge', () => {
         const referenceId = '1:3:testForm';
         const total = 89;
-  
+
         const sisp = new Sisp({ posID, posAutCode, url });
-  
+
         const entityCode = '2';
         const phoneNumber = '9573234';
-  
+
         const result = sisp.generateRechargeRequestForm(referenceId, total, webhookUrl, entityCode, phoneNumber);
-  
+
         const expected = successDataForPhoneRechargeForm.replace(/\s/g, '');
-  
+
         expect(result.replace(/\s/g, '')).toEqual(expected);
       });
     });
 
     describe('Processing Payment Response', () => {
-      describe('Successful Payment', () => {
+      describe('Successful Payment when response body is string', () => {
         it('should return undefined if messageType is 8 and transactionCode is for purchase', () => {
           const paymentSuccessData = 'messageType=8&merchantRespCP=1047&merchantRespTid=00004787&merchantRespMerchantRef=52&merchantRespMerchantSession=S20210714100158&merchantRespPurchaseAmount=89&merchantRespMessageID=Zo23nJ2P9C3i3e5Z70K1&merchantRespPan=************4242&merchantResp=C&merchantRespErrorCode=&merchantRespErrorDescription=&merchantRespErrorDetail=&languageMessages=pt&merchantRespTimeStamp=2021-07-14%2010%3A01%3A58&merchantRespReferenceNumber=&merchantRespEntityCode=&merchantRespClientReceipt=&merchantRespAdditionalErrorMessage=&merchantRespReloadCode=&resultFingerPrint=j2hcuvti%2B1GUtdm8FiLr%2FB7MyT7OBKnswL6AnKy2LTGTRx0CBojFCvkzsyM3Z8Z%2BIzdF0%2FRxta%2FY2B9D9aRqKA%3D%3D&UserCancelled=false&resultFingerPrintVersion=1';
 
@@ -357,7 +357,145 @@ describe('SISP Payment', () => {
           const total = 89;
 
           const sisp = new Sisp({ posID, posAutCode, url });
-          
+
+          const entityCode = '2';
+          const phoneNumber = '9573234';
+
+          const requestFormResult = sisp.generateRechargeRequestForm(referenceId, total, webhookUrl, entityCode, phoneNumber);
+
+          const formExpected = successDataForPhoneRechargeForm.replace(/\s/g, '');
+
+          const result = sisp.validatePayment(paymentSuccessData);
+          const expected = undefined;
+
+          expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+          expect(result).toEqual(expected);
+        });
+      });
+
+      describe('Successful Payment when response body is JSON', () => {
+        it('should return undefined if messageType is 8 and transactionCode is for purchase', () => {
+          const paymentSuccessData = {
+            messageType: '8',
+            merchantRespCP: '1047',
+            merchantRespTid: '00004787',
+            merchantRespMerchantRef: '52',
+            merchantRespMerchantSession: 'S20210714100158',
+            merchantRespPurchaseAmount: '89',
+            merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+            merchantRespPan: '************4242',
+            merchantResp: 'C',
+            merchantRespErrorCode: '',
+            merchantRespErrorDescription: '',
+            merchantRespErrorDetail: '',
+            languageMessages: 'pt',
+            merchantRespTimeStamp: '2021-07-14 10:01:58',
+            merchantRespReferenceNumber: '',
+            merchantRespEntityCode: '',
+            merchantRespClientReceipt: '',
+            merchantRespAdditionalErrorMessage: '',
+            merchantRespReloadCode: '',
+            resultFingerPrint: 'j2hcuvti+1GUtdm8FiLr/B7MyT7OBKnswL6AnKy2LTGTRx0CBojFCvkzsyM3Z8Z+IzdF0/Rxta/Y2B9D9aRqKA==',
+            UserCancelled: 'false',
+            resultFingerPrintVersion: '1'
+          };
+
+          const referenceId = '1:3:testForm';
+          const total = 89;
+
+          const sisp = new Sisp({ posID, posAutCode, url });
+
+          const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
+
+          const formExpected = successDataForPurchaseForm.replace(/\s/g, '');
+
+          const result = sisp.validatePayment(paymentSuccessData);
+          const expected = undefined;
+
+          expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+          expect(result).toEqual(expected);
+        });
+
+        it('should return undefined if messageType is P and transactionCode is for service payment', () => {
+          const paymentSuccessData = {
+            messageType: 'P',
+            merchantRespCP: '1047',
+            merchantRespTid: '00004787',
+            merchantRespMerchantRef: '52',
+            merchantRespMerchantSession: 'S20210714100158',
+            merchantRespPurchaseAmount: '89',
+            merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+            merchantRespPan: '************4242',
+            merchantResp: 'C',
+            merchantRespErrorCode: '',
+            merchantRespErrorDescription: '',
+            merchantRespErrorDetail: '',
+            languageMessages: 'pt',
+            merchantRespTimeStamp: '2021-07-14 10:01:58',
+            merchantRespReferenceNumber: '227045251',
+            merchantRespEntityCode: '6',
+            merchantRespClientReceipt: 'Pagamento de Servicos<br/>       N. Movimento Cartao: 0<br/><br/>   Empresa: CVMULTIMEDIA<br/>   Morada: Rua Cabo Verde Telecom N.1<br/>   Capital Social: 1.000.000.000 CVE<br/>   N Contribuinte: 252337182<br/>   Reg Cons.: 415/95/1207<br/><br/>          Entidade: 6<br/>          Referencia: 9573234<br/>          Montante: 100$00 ESCUDO<br/><br/> --------------------------------------<br/><br/>',
+            merchantRespAdditionalErrorMessage: '',
+            merchantRespReloadCode: '',
+            resultFingerPrint: 'qL05i21q4uq54hv6lAglb1QPImQrQJgVA6HFsr2FMYrpGvm2Of6LppTqjzgF3pqX9Tf+BKwAesfT5Zs6DcR2xw==',
+            resultFingerPrintVersion: '1'
+          };
+
+          const referenceId = '1:3:testForm';
+          const total = 89;
+
+          const sisp = new Sisp({ posID, posAutCode, url });
+
+          const entityCode = '6';
+          const referenceNumber = '227045251';
+
+          const requestFormResult = sisp.generateServicePaymentRequestForm(
+            referenceId,
+            total,
+            webhookUrl,
+            entityCode,
+            referenceNumber
+          );
+
+          const formExpected = successDataForServicePaymentForm.replace(/\s/g, '');
+
+          const result = sisp.validatePayment(paymentSuccessData);
+          const expected = undefined;
+
+          expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+          expect(result).toEqual(expected);
+        });
+
+        it('should return undefined if messageType is M and transactionCode is for phone recharge', () => {
+          const paymentSuccessData = {
+            messageType: 'M',
+            merchantRespCP: '1047',
+            merchantRespTid: '00004787',
+            merchantRespMerchantRef: '52',
+            merchantRespMerchantSession: 'S20210714100158',
+            merchantRespPurchaseAmount: '89',
+            merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+            merchantRespPan: '************4242',
+            merchantResp: 'C',
+            merchantRespErrorCode: '',
+            merchantRespErrorDescription: '',
+            merchantRespErrorDetail: '',
+            languageMessages: 'pt',
+            merchantRespTimeStamp: '2021-07-14 10:01:58',
+            merchantRespReferenceNumber: '9573234',
+            merchantRespEntityCode: '2',
+            merchantRespClientReceipt: 'CVMovel<br/> CARREGAMENTO TELEMOVEL<br/><br/> VALOR C/ IVA: 100,00 ESCUDO<br/><br/> REFERENCIA PAGAMENTO: 102161250<br/><br/> Dentro de instantes recebera uma <br/> mensagem de confirmacao do <br/> carregamento no seu telemovel.<br/><br/> Prazo de reclamacao ate 48H, <br/> apos a realizacao da operacao<br/><br/> www.cvmovel.cv<br/> Atendimento ao cliente 180<br/><br/> CVMovel S.A.<br/> NIF.: 252337000<br/> Registo Comercial n. 1935<br/>--------------------------------------<br/><br/><br/>--- INICIO 890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234 FIM<br/>',
+            merchantRespAdditionalErrorMessage: ' ',
+            merchantRespReloadCode: '000000000000',
+            resultFingerPrint: 'NojaMiZSl78ZtkGxaBnjjn/MvRtdfkPkYI7IJjdK/Ea7OriZ9qD3r8iBm5iZ8PD2P4pRPKId36n1ZqXV0YSv4Q==',
+            resultFingerPrintVersion: '1'
+          };
+
+          const referenceId = '1:3:testForm';
+          const total = 89;
+
+          const sisp = new Sisp({ posID, posAutCode, url });
+
           const entityCode = '2';
           const phoneNumber = '9573234';
 
@@ -380,13 +518,13 @@ describe('SISP Payment', () => {
       it('should return the correct form for token enrollment', () => {
         const referenceId = '1:3:testForm';
         const total = 89;
-  
+
         const sisp = new Sisp({ posID, posAutCode, url: tokenEnrollmentUrl });
-  
+
         const result = sisp.generateTokenEnrollmentRequestForm(referenceId, total, tokenEnrollmentWebhook);
-  
+
         const expected = successDataForTokenEnrollmentRequestForm.replace(/\s/g, '');
-  
+
         expect(result.replace(/\s/g, '')).toEqual(expected);
       });
 
@@ -394,13 +532,13 @@ describe('SISP Payment', () => {
         const referenceId = '1:3:testForm';
         const total = 89;
         const token = '831561583';
-  
+
         const sisp = new Sisp({ posID, posAutCode, url: tokenPaymentUrl });
-  
+
         const result = sisp.generateTokenPurchaseRequestForm(referenceId, total, tokenPaymentWebhook, token);
-  
+
         const expected = successDataForTokenPurchaseRequestForm.replace(/\s/g, '');
-  
+
         expect(result.replace(/\s/g, '')).toEqual(expected);
       });
 
@@ -408,13 +546,13 @@ describe('SISP Payment', () => {
         const referenceId = '1:3:testForm';
         const total = 89;
         const token = '831561583';
-  
+
         const sisp = new Sisp({ posID, posAutCode, url: tokenCancelUrl });
-  
+
         const result = sisp.generateTokenCancelRequestForm(referenceId, tokenCancelWebhook, token);
-  
+
         const expected = successDataForTokenCancelRequestForm.replace(/\s/g, '');
-  
+
         expect(result.replace(/\s/g, '')).toEqual(expected);
       });
 
@@ -425,13 +563,13 @@ describe('SISP Payment', () => {
 
         const entityCode = '6';
         const referenceNumber = '227045251';
-  
+
         const sisp = new Sisp({ posID, posAutCode, url: tokenPaymentUrl });
-  
+
         const result = sisp.generateTokenServicePaymentRequestForm(referenceId, total, tokenPaymentWebhook, entityCode, referenceNumber, token);
-  
+
         const expected = successDataForTokenServicePaymentForm.replace(/\s/g, '');
-  
+
         expect(result.replace(/\s/g, '')).toEqual(expected);
       });
 
@@ -442,18 +580,18 @@ describe('SISP Payment', () => {
 
         const entityCode = '2';
         const phoneNumber = '9573234';
-  
+
         const sisp = new Sisp({ posID, posAutCode, url: tokenPaymentUrl });
-  
+
         const result = sisp.generateTokenRechargeRequestForm(referenceId, total, tokenPaymentWebhook, entityCode, phoneNumber, token);
-  
+
         const expected = successDataForTokenRechargeRequestForm.replace(/\s/g, '');
-  
+
         expect(result.replace(/\s/g, '')).toEqual(expected);
       });
     });
 
-    describe('Successful requests', () => {
+    describe('Successful requests when response body is string', () => {
       it('should return undefined if messageType is A and transactionCode is for token enrollment', () => {
         const successData = 'messageType=A&merchantRespMerchantRef=52&merchantRespMerchantSession=S20210714100158&merchantRespMessageID=Zo23nJ2P9C3i3e5Z70K1&merchantResp=0&merchantRespCP=1047&merchantRespTid=00004787&languageMessages=pt&merchantRespTimeStamp=2021-07-14%2010%3A01%3A58&token=150481477&tokenDescription=BCA&maxAmountAllowed=100&limitDate=2022-11-23&maxNumberOfTransactions=10&resultFingerPrint=eZ5%2FkTpA9RvrhwvmYUNnoYDKuixMkOn5xegfkDZXZigDPH7dV5JlAE%2FSo%2FOFs9x9yn4W%2FTCWASWqvcIYDp0ovw%3D%3D&resultFingerPrintVersion=1&merchantRespPan=%2A%2A%2A%2A%2A%2A%2A%2A%2A%2A%2A%2A0285';
 
@@ -558,90 +696,390 @@ describe('SISP Payment', () => {
         expect(result).toEqual(expected);
       });
     });
+
+    describe('Successful requests when response body is JSON', () => {
+      it('should return undefined if messageType is A and transactionCode is for token enrollment', () => {
+        const successData = {
+          messageType: 'A',
+          merchantRespMerchantRef: '52',
+          merchantRespMerchantSession: 'S20210714100158',
+          merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+          merchantResp: '0',
+          merchantRespCP: '1047',
+          merchantRespTid: '00004787',
+          languageMessages: 'pt',
+          merchantRespTimeStamp: '2021-07-14 10:01:58',
+          token: '150481477',
+          tokenDescription: 'BCA',
+          maxAmountAllowed: '100',
+          limitDate: '2022-11-23',
+          maxNumberOfTransactions: '10',
+          resultFingerPrint: 'eZ5/kTpA9RvrhwvmYUNnoYDKuixMkOn5xegfkDZXZigDPH7dV5JlAE/So/OFs9x9yn4W/TCWASWqvcIYDp0ovw==',
+          resultFingerPrintVersion: '1',
+          merchantRespPan: '************0285'
+        };
+
+        const referenceId = '1:3:testForm';
+        const total = 89;
+
+        const sisp = new Sisp({ posID, posAutCode, url: tokenEnrollmentUrl });
+
+        const requestFormResult = sisp.generateTokenEnrollmentRequestForm(referenceId, total, tokenEnrollmentWebhook);
+
+        const formExpected = successDataForTokenEnrollmentRequestForm.replace(/\s/g, '');
+
+        const result = sisp.validatePayment(successData);
+        const expected = undefined;
+
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
+
+      it('should return undefined if messageType is B and transactionCode is for token purchase', () => {
+        const successData = {
+          messageType: 'B',
+          merchantRespMerchantRef: '52',
+          merchantRespMerchantSession: 'S20210714100158',
+          merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+          merchantResp: '0',
+          merchantRespCP: '1047',
+          merchantRespTid: '00004787',
+          approvalCode: '016961',
+          merchantRespPurchaseAmount: '89',
+          languageMessages: 'pt',
+          merchantRespTimeStamp: '2021-07-14 10:01:58',
+          resultFingerPrint: 'qJ7kdNFauLM0V3CX06mRTwXMx803TLDg5hUtbU6oW+v4Eca6ikYBK8gPEVtzJx+85G7r0tfmPvw8hn5fB5gvSg==',
+          resultFingerPrintVersion: '1',
+          merchantRespClientReceipt: ' Pagamento de Servicos<br/> N. Movimento Cartao: 0<br/><br/> Empresa: CVMULTIMEDIA<br/> Morada: Rua Cabo Verde Telecom N.1<br/> Capital Social: 1.000.000.000 CVE<br/> N Contribuinte: 252337182<br/> Reg Cons.: 415/95/1207<br/><br/> Entidade: 6<br/> Referencia: 227045251<br/> Montante: 100$00 ESCUDO<br/><br/> --------------------------------------<br/><br/>',
+          merchantRespReloadCode: '000000000000',
+          merchantRespReferenceNumber: '227045251',
+          merchantRespEntityCode: '6'
+        };
+
+        const referenceId = '1:3:testForm';
+        const total = 89;
+        const token = '831561583';
+
+        const sisp = new Sisp({ posID, posAutCode, url: tokenPaymentUrl });
+
+        const requestFormResult = sisp.generateTokenPurchaseRequestForm(referenceId, total, tokenPaymentWebhook, token);
+
+        const formExpected = successDataForTokenPurchaseRequestForm.replace(/\s/g, '');
+
+        const result = sisp.validatePayment(successData);
+        const expected = undefined;
+
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
+
+      it('should return undefined if messageType is C and transactionCode is for token cancel', () => {
+        const successData = {
+          messageType: 'C',
+          merchantRespMerchantRef: '52',
+          merchantRespMerchantSession: 'S20210714100158',
+          merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+          merchantResp: '0',
+          merchantRespCP: '1047',
+          merchantRespTid: '00004787',
+          approvalCode: '',
+          merchantRespPurchaseAmount: '0',
+          languageMessages: 'pt',
+          merchantRespTimeStamp: '2021-07-14 10:01:58',
+          resultFingerPrint: 'rhAXh4vy3iqhVDx7c/UKumaGEazn4His7xjBH6WldM38oCOVkfge+I8ZBHe3U93gi0wf1gOqv/xJaH3KBC5B2g==',
+          resultFingerPrintVersion: '1',
+          merchantRespClientReceipt: '',
+          merchantRespReloadCode: '',
+          merchantRespReferenceNumber: '',
+          merchantRespEntityCode: ''
+        };
+
+        const referenceId = '1:3:testForm';
+        const token = '831561583';
+
+        const sisp = new Sisp({ posID, posAutCode, url: tokenCancelUrl });
+
+        const requestFormResult = sisp.generateTokenCancelRequestForm(referenceId, tokenCancelWebhook, token);
+
+        const formExpected = successDataForTokenCancelRequestForm.replace(/\s/g, '');
+
+        const result = sisp.validatePayment(successData);
+        const expected = undefined;
+
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
+
+      it('should return undefined if messageType is B and transactionCode is for service payment with token', () => {
+        const successData = {
+          messageType: 'B',
+          merchantRespMerchantRef: '52',
+          merchantRespMerchantSession: 'S20210714100158',
+          merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+          merchantResp: '0',
+          merchantRespCP: '1047',
+          merchantRespTid: '00004787',
+          approvalCode: '016961',
+          merchantRespPurchaseAmount: '89',
+          languageMessages: 'pt',
+          merchantRespTimeStamp: '2021-07-14 10:01:58',
+          resultFingerPrint: 'qJ7kdNFauLM0V3CX06mRTwXMx803TLDg5hUtbU6oW+v4Eca6ikYBK8gPEVtzJx+85G7r0tfmPvw8hn5fB5gvSg==',
+          resultFingerPrintVersion: '1',
+          merchantRespClientReceipt: ' Pagamento de Servicos<br/> N. Movimento Cartao: 0<br/><br/> Empresa: CVMULTIMEDIA<br/> Morada: Rua Cabo Verde Telecom N.1<br/> Capital Social: 1.000.000.000 CVE<br/> N Contribuinte: 252337182<br/> Reg Cons.: 415/95/1207<br/><br/> Entidade: 6<br/> Referencia: 227045251<br/> Montante: 100$00 ESCUDO<br/><br/> --------------------------------------<br/><br/>',
+          merchantRespReloadCode: '000000000000',
+          merchantRespReferenceNumber: '227045251',
+          merchantRespEntityCode: '6'
+        };
+
+        const referenceId = '1:3:testForm';
+        const total = 89;
+        const token = '831561583';
+
+        const entityCode = '6';
+        const referenceNumber = '227045251';
+
+        const sisp = new Sisp({ posID, posAutCode, url: tokenPaymentUrl });
+
+        const requestFormResult = sisp.generateTokenServicePaymentRequestForm(referenceId, total, tokenPaymentWebhook, entityCode, referenceNumber, token);
+
+        const formExpected = successDataForTokenServicePaymentForm.replace(/\s/g, '');
+
+        const result = sisp.validatePayment(successData);
+        const expected = undefined;
+
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
+
+      it('should return undefined if messageType is B and transactionCode is for phone recharge with token', () => {
+        const successData = {
+          messageType: 'B',
+          merchantRespMerchantRef: '52',
+          merchantRespMerchantSession: 'S20210714100158',
+          merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+          merchantResp: '0',
+          merchantRespCP: '1047',
+          merchantRespTid: '00004787',
+          approvalCode: '016961',
+          merchantRespPurchaseAmount: '89',
+          languageMessages: 'pt',
+          merchantRespTimeStamp: '2021-07-14 10:01:58',
+          resultFingerPrint: 'WI3Nh7ukA2OtAlueVToQ3NBHHjsNwFLNGEBYrKS5yHtCYtYtxkB7pAnncC/arDODZWhcZ2BFMDJ54ABGeF1lCA==',
+          resultFingerPrintVersion: '1',
+          merchantRespClientReceipt: 'CVMovel<br/> CARREGAMENTO TELEMOVEL<br/><br/> VALOR C/ IVA: 100,00 ESCUDO<br/><br/> REFERENCIA PAGAMENTO: 102161250<br/><br/> Dentro de instantes recebera uma <br/> mensagem de confirmacao do <br/> carregamento no seu telemovel.<br/><br/> Prazo de reclamacao ate 48H, <br/> apos a realizacao da operacao<br/><br/> www.cvmovel.cv<br/> Atendimento ao cliente 180<br/><br/> CVMovel S.A.<br/> NIF.: 252337000<br/> Registo Comercial n. 1935<br/>--------------------------------------<br/><br/><br/>--- INICIO 890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234 FIM<br/>',
+          merchantRespReloadCode: '000000000000',
+          merchantRespReferenceNumber: '9573234',
+          merchantRespEntityCode: '2'
+        };
+
+        const referenceId = '1:3:testForm';
+        const total = 89;
+        const token = '831561583';
+
+        const entityCode = '2';
+        const phoneNumber = '9573234';
+
+        const sisp = new Sisp({ posID, posAutCode, url: tokenPaymentUrl });
+
+        const requestFormResult = sisp.generateTokenRechargeRequestForm(referenceId, total, tokenPaymentWebhook, entityCode, phoneNumber, token);
+
+        const formExpected = successDataForTokenRechargeRequestForm.replace(/\s/g, '');
+
+        const result = sisp.validatePayment(successData);
+        const expected = undefined;
+
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
+    });
   });
 
   describe('Error Payment', () => {
-    it('should return code 003 if messageType is different from "8", "M", "P", "A", "B" or "C"', () => {
-      const paymentSuccessData = 'messageType=D&merchantRespCP=1047&merchantRespTid=00004787&merchantRespMerchantRef=52&merchantRespMerchantSession=S20200626121231&merchantRespPurchaseAmount=400.00&merchantRespMessageID=Zo23nJ2P9C3i3e5Z70K1&merchantRespPan=************4242&merchantResp=C&merchantRespErrorCode=&merchantRespErrorDescription=&merchantRespErrorDetail=&languageMessages=pt&merchantRespTimeStamp=2020-06-26+12%3A11%3A01&merchantRespReferenceNumber=&merchantRespEntityCode=&merchantRespClientReceipt=&merchantRespAdditionalErrorMessage=&merchantRespReloadCode=&resultFingerPrint=GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr%2B%2FVocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA%3D%3D&UserCancelled=false&resultFingerPrintVersion=1';
+    describe('Response body is string', () => {
+      it('should return code 003 if messageType is different from "8", "M", "P", "A", "B" or "C"', () => {
+        const paymentSuccessData = 'messageType=D&merchantRespCP=1047&merchantRespTid=00004787&merchantRespMerchantRef=52&merchantRespMerchantSession=S20200626121231&merchantRespPurchaseAmount=400.00&merchantRespMessageID=Zo23nJ2P9C3i3e5Z70K1&merchantRespPan=************4242&merchantResp=C&merchantRespErrorCode=&merchantRespErrorDescription=&merchantRespErrorDetail=&languageMessages=pt&merchantRespTimeStamp=2020-06-26+12%3A11%3A01&merchantRespReferenceNumber=&merchantRespEntityCode=&merchantRespClientReceipt=&merchantRespAdditionalErrorMessage=&merchantRespReloadCode=&resultFingerPrint=GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr%2B%2FVocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA%3D%3D&UserCancelled=false&resultFingerPrintVersion=1';
 
-      const referenceId = '1:3:testForm';
-      const total = 89;
+        const referenceId = '1:3:testForm';
+        const total = 89;
 
-      const sisp = new Sisp({ posID, posAutCode, url });
-      const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
+        const sisp = new Sisp({ posID, posAutCode, url });
+        const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
 
-      const formExpected = successDataForPurchaseForm.replace(/\s/g, '');
+        const formExpected = successDataForPurchaseForm.replace(/\s/g, '');
 
-      const result = sisp.validatePayment(paymentSuccessData);
-      const expected = PAYMENT_ERRORS.processing;
+        const result = sisp.validatePayment(paymentSuccessData);
+        const expected = PAYMENT_ERRORS.processing;
 
-      expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
-      expect(result).toEqual(expected);
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
+
+      it('should return code 002 if user cancel payment', () => {
+        const paymentSuccessData = 'messageType=6&merchantRespCP=1047&merchantRespTid=00004787&merchantRespMerchantRef=52&merchantRespMerchantSession=S20200626121231&merchantRespPurchaseAmount=400.00&merchantRespMessageID=Zo23nJ2P9C3i3e5Z70K1&merchantRespPan=************4242&merchantResp=C&merchantRespErrorCode=&merchantRespErrorDescription=&merchantRespErrorDetail=&languageMessages=pt&merchantRespTimeStamp=2020-06-26+12%3A11%3A01&merchantRespReferenceNumber=&merchantRespEntityCode=&merchantRespClientReceipt=&merchantRespAdditionalErrorMessage=&merchantRespReloadCode=&resultFingerPrint=GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr%2B%2FVocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA%3D%3D&UserCancelled=true&resultFingerPrintVersion=1';
+
+        const referenceId = '1:3:testForm';
+        const total = 89;
+
+        const sisp = new Sisp({ posID, posAutCode, url });
+        const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
+
+        const formExpected = successDataForPurchaseForm.replace(/\s/g, '');
+
+        const result = sisp.validatePayment(paymentSuccessData);
+        const expected = PAYMENT_ERRORS.cancelled;
+
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
+
+      it('should return code 001 if the generated fingerprint is invalid', () => {
+        const paymentSuccessData = 'messageType=8&merchantRespCP=1047&merchantRespTid=00004787&merchantRespMerchantRef=52&merchantRespMerchantSession=S20200626121231&merchantRespPurchaseAmount=89&merchantRespMessageID=Zo23nJ2P9C3i3e5Z70K1&merchantRespPan=************4242&merchantResp=C&merchantRespErrorCode=&merchantRespErrorDescription=&merchantRespErrorDetail=&languageMessages=pt&merchantRespTimeStamp=2020-06-26+12%3A11%3A01&merchantRespReferenceNumber=&merchantRespEntityCode=&merchantRespClientReceipt=&merchantRespAdditionalErrorMessage=&merchantRespReloadCode=&resultFingerPrint=GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr%2B%2FVocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA%3D%3D&UserCancelled=true&resultFingerPrintVersion=1';
+
+        const referenceId = '1:3:testForm';
+        const total = 89;
+
+        const sisp = new Sisp({ posID, posAutCode, url });
+        const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
+
+        const formExpected = successDataForPurchaseForm.replace(/\s/g, '');
+
+        const result = sisp.validatePayment(paymentSuccessData);
+        const expected = PAYMENT_ERRORS.fingerprint;
+
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
     });
 
-    it('should return code 002 if user cancel payment', () => {
-      const paymentSuccessData = 'messageType=6&merchantRespCP=1047&merchantRespTid=00004787&merchantRespMerchantRef=52&merchantRespMerchantSession=S20200626121231&merchantRespPurchaseAmount=400.00&merchantRespMessageID=Zo23nJ2P9C3i3e5Z70K1&merchantRespPan=************4242&merchantResp=C&merchantRespErrorCode=&merchantRespErrorDescription=&merchantRespErrorDetail=&languageMessages=pt&merchantRespTimeStamp=2020-06-26+12%3A11%3A01&merchantRespReferenceNumber=&merchantRespEntityCode=&merchantRespClientReceipt=&merchantRespAdditionalErrorMessage=&merchantRespReloadCode=&resultFingerPrint=GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr%2B%2FVocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA%3D%3D&UserCancelled=true&resultFingerPrintVersion=1';
+    describe('Response body is JSON', () => {
+      it('should return code 003 if messageType is different from "8", "M", "P", "A", "B" or "C"', () => {
+        const paymentSuccessData = {
+          messageType: 'D',
+          merchantRespCP: '1047',
+          merchantRespTid: '00004787',
+          merchantRespMerchantRef: '52',
+          merchantRespMerchantSession: 'S20200626121231',
+          merchantRespPurchaseAmount: '400.00',
+          merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+          merchantRespPan: '************4242',
+          merchantResp: 'C',
+          merchantRespErrorCode: '',
+          merchantRespErrorDescription: '',
+          merchantRespErrorDetail: '',
+          languageMessages: 'pt',
+          merchantRespTimeStamp: '2020-06-26 12:11:01',
+          merchantRespReferenceNumber: '',
+          merchantRespEntityCode: '',
+          merchantRespClientReceipt: '',
+          merchantRespAdditionalErrorMessage: '',
+          merchantRespReloadCode: '',
+          resultFingerPrint: 'GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr+/VocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA==',
+          UserCancelled: 'false',
+          resultFingerPrintVersion: '1'
+        };
 
-      const referenceId = '1:3:testForm';
-      const total = 89;
+        const referenceId = '1:3:testForm';
+        const total = 89;
 
-      const sisp = new Sisp({ posID, posAutCode, url });
-      const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
+        const sisp = new Sisp({ posID, posAutCode, url });
+        const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
 
-      const formExpected = successDataForPurchaseForm.replace(/\s/g, '');
+        const formExpected = successDataForPurchaseForm.replace(/\s/g, '');
 
-      const result = sisp.validatePayment(paymentSuccessData);
-      const expected = PAYMENT_ERRORS.cancelled;
+        const result = sisp.validatePayment(paymentSuccessData);
+        const expected = PAYMENT_ERRORS.processing;
 
-      expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
-      expect(result).toEqual(expected);
-    });
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
 
-    it('should return code 001 if the generated fingerprint is invalid', () => {
-      const paymentSuccessData = 'messageType=8&merchantRespCP=1047&merchantRespTid=00004787&merchantRespMerchantRef=52&merchantRespMerchantSession=S20200626121231&merchantRespPurchaseAmount=89&merchantRespMessageID=Zo23nJ2P9C3i3e5Z70K1&merchantRespPan=************4242&merchantResp=C&merchantRespErrorCode=&merchantRespErrorDescription=&merchantRespErrorDetail=&languageMessages=pt&merchantRespTimeStamp=2020-06-26+12%3A11%3A01&merchantRespReferenceNumber=&merchantRespEntityCode=&merchantRespClientReceipt=&merchantRespAdditionalErrorMessage=&merchantRespReloadCode=&resultFingerPrint=GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr%2B%2FVocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA%3D%3D&UserCancelled=true&resultFingerPrintVersion=1';
+      it('should return code 002 if user cancel payment', () => {
+        const paymentSuccessData = {
+          messageType: '6',
+          merchantRespCP: '1047',
+          merchantRespTid: '00004787',
+          merchantRespMerchantRef: '52',
+          merchantRespMerchantSession: 'S20200626121231',
+          merchantRespPurchaseAmount: '400.00',
+          merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+          merchantRespPan: '************4242',
+          merchantResp: 'C',
+          merchantRespErrorCode: '',
+          merchantRespErrorDescription: '',
+          merchantRespErrorDetail: '',
+          languageMessages: 'pt',
+          merchantRespTimeStamp: '2020-06-26 12:11:01',
+          merchantRespReferenceNumber: '',
+          merchantRespEntityCode: '',
+          merchantRespClientReceipt: '',
+          merchantRespAdditionalErrorMessage: '',
+          merchantRespReloadCode: '',
+          resultFingerPrint: 'GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr+/VocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA==',
+          UserCancelled: 'true',
+          resultFingerPrintVersion: '1'
+        };
 
-      const referenceId = '1:3:testForm';
-      const total = 89;
+        const referenceId = '1:3:testForm';
+        const total = 89;
 
-      const sisp = new Sisp({ posID, posAutCode, url });
-      const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
+        const sisp = new Sisp({ posID, posAutCode, url });
+        const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
 
-      const formExpected = successDataForPurchaseForm.replace(/\s/g, '');
+        const formExpected = successDataForPurchaseForm.replace(/\s/g, '');
 
-      const result = sisp.validatePayment(paymentSuccessData);
-      const expected = PAYMENT_ERRORS.fingerprint;
+        const result = sisp.validatePayment(paymentSuccessData);
+        const expected = PAYMENT_ERRORS.cancelled;
 
-      expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
-      expect(result).toEqual(expected);
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
+
+      it('should return code 001 if the generated fingerprint is invalid', () => {
+        const paymentSuccessData = {
+          messageType: '8',
+          merchantRespCP: '1047',
+          merchantRespTid: '00004787',
+          merchantRespMerchantRef: '52',
+          merchantRespMerchantSession: 'S20200626121231',
+          merchantRespPurchaseAmount: '89',
+          merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+          merchantRespPan: '************4242',
+          merchantResp: 'C',
+          merchantRespErrorCode: '',
+          merchantRespErrorDescription: '',
+          merchantRespErrorDetail: '',
+          languageMessages: 'pt',
+          merchantRespTimeStamp: '2020-06-26 12:11:01',
+          merchantRespReferenceNumber: '',
+          merchantRespEntityCode: '',
+          merchantRespClientReceipt: '',
+          merchantRespAdditionalErrorMessage: '',
+          merchantRespReloadCode: '',
+          resultFingerPrint: 'GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr+/VocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA==',
+          UserCancelled: 'true',
+          resultFingerPrintVersion: '1'
+        };
+
+        const referenceId = '1:3:testForm';
+        const total = 89;
+
+        const sisp = new Sisp({ posID, posAutCode, url });
+        const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
+
+        const formExpected = successDataForPurchaseForm.replace(/\s/g, '');
+
+        const result = sisp.validatePayment(paymentSuccessData);
+        const expected = PAYMENT_ERRORS.fingerprint;
+
+        expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+        expect(result).toEqual(expected);
+      });
     });
   });
 
   describe('Format Error', () => {
     it('should return invalid format if the validatePayment parameter is not an x-www-form-urlencoded', () => {
-      const paymentSuccessData = {
-        languageMessages: 'pt',
-        merchantResp: 'C',
-        merchantRespAdditionalErrorMessage: '',
-        merchantRespCP: '1047',
-        merchantRespClientReceipt: '',
-        merchantRespEntityCode: '',
-        merchantRespErrorCode: '',
-        merchantRespErrorDescription: '',
-        merchantRespErrorDetail: '',
-        merchantRespMerchantRef: '52',
-        merchantRespMerchantSession: 'S20200626121231',
-        merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
-        merchantRespPan: '************4242',
-        merchantRespPurchaseAmount: '400.00',
-        merchantRespReferenceNumber: '',
-        merchantRespReloadCode: '',
-        merchantRespTid: '00004787',
-        merchantRespTimeStamp: '2020-06-26 12:11:01',
-        messageType: '8',
-        resultFingerPrint: 'GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr+/VocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA==',
-        resultFingerPrintVersion: '1',
-        UserCancelled: 'false'
-      };
+      const paymentSuccessData = 999;
 
       const referenceId = '1:3:testForm';
       const total = 89;

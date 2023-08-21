@@ -70,21 +70,21 @@ describe('SISP Payment', () => {
         it('should return the correct form for purchase with 3DSec', () => {
           const referenceId = '1:3:testForm';
           const total = 89;
-    
+
           const sisp = new Sisp({ posID, posAutCode, url });
           const result = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, {
-            acctID: "xpto",
-            email: "carlos@email.com",
-            billAddrCountry: "123",
+            acctID: 'xpto',
+            email: 'carlos@email.com',
+            billAddrCountry: '123',
             mobilePhone: {
               // Cape Verd country code
-              cc: "123",
-              subscriber: "2389573234"
-            },
+              cc: '123',
+              subscriber: '2389573234'
+            }
           });
-    
+
           const expected = successDataForPurchaseFormWith3DSec.replace(/\s/g, '');
-    
+
           expect(result.replace(/\s/g, '')).toEqual(expected);
         });
       });
@@ -95,13 +95,13 @@ describe('SISP Payment', () => {
 
           const sisp = new Sisp({ posID, posAutCode, url });
           const result = sisp.generatePaymentRequestForm(total, webhookUrl, {
-            acctID: "xpto",
-            email: "carlos@email.com",
-            billAddrCountry: "123",
+            acctID: 'xpto',
+            email: 'carlos@email.com',
+            billAddrCountry: '123',
             mobilePhone: {
               // Cape Verd country code
-              cc: "123",
-              subscriber: "2389573234"
+              cc: '123',
+              subscriber: '2389573234'
             },
           });
 
@@ -115,13 +115,13 @@ describe('SISP Payment', () => {
 
           const sisp = new Sisp({ posID, posAutCode, url });
           const result = sisp.generatePaymentRequestForm(referenceId, webhookUrl, {
-            acctID: "xpto",
-            email: "carlos@email.com",
-            billAddrCountry: "123",
+            acctID: 'xpto',
+            email: 'carlos@email.com',
+            billAddrCountry: '123',
             mobilePhone: {
               // Cape Verd country code
-              cc: "123",
-              subscriber: "2389573234"
+              cc: '123',
+              subscriber: '2389573234'
             },
           });
 
@@ -135,13 +135,13 @@ describe('SISP Payment', () => {
 
           const sisp = new Sisp({ posID, posAutCode, url });
           const result = sisp.generatePaymentRequestForm(referenceId, 0, webhookUrl, {
-            acctID: "xpto",
-            email: "carlos@email.com",
-            billAddrCountry: "123",
+            acctID: 'xpto',
+            email: 'carlos@email.com',
+            billAddrCountry: '123',
             mobilePhone: {
               // Cape Verd country code
-              cc: "123",
-              subscriber: "2389573234"
+              cc: '123',
+              subscriber: '2389573234'
             },
           });
 
@@ -155,13 +155,13 @@ describe('SISP Payment', () => {
 
           const sisp = new Sisp({ posID, posAutCode, url });
           const result = sisp.generatePaymentRequestForm(referenceId, -1, webhookUrl, {
-            acctID: "xpto",
-            email: "carlos@email.com",
-            billAddrCountry: "123",
+            acctID: 'xpto',
+            email: 'carlos@email.com',
+            billAddrCountry: '123',
             mobilePhone: {
               // Cape Verd country code
-              cc: "123",
-              subscriber: "2389573234"
+              cc: '123',
+              subscriber: '2389573234'
             },
           });
 
@@ -176,13 +176,13 @@ describe('SISP Payment', () => {
 
           const sisp = new Sisp({ posID, posAutCode, url });
           const result = sisp.generatePaymentRequestForm(referenceId, total, null, {
-            acctID: "xpto",
-            email: "carlos@email.com",
-            billAddrCountry: "123",
+            acctID: 'xpto',
+            email: 'carlos@email.com',
+            billAddrCountry: '123',
             mobilePhone: {
               // Cape Verd country code
-              cc: "123",
-              subscriber: "2389573234"
+              cc: '123',
+              subscriber: '2389573234'
             },
           });
 
@@ -194,11 +194,11 @@ describe('SISP Payment', () => {
         it('should return error if userBillingInfo is missing', () => {
           const referenceId = '1:3:testForm';
           const total = 89;
-    
+
           const sisp = new Sisp({ posID, posAutCode, url });
-    
+
           const result = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl);
-    
+
           expect(result).toBeDefined();
           expect(result.code).toBe(401);
           expect(result.description).toBe('Invalid data error: "acctID" is required');
@@ -207,7 +207,7 @@ describe('SISP Payment', () => {
     });
 
     describe('Processing Payment Response', () => {
-      describe('Successful Payment', () => {
+      describe('Successful Payment when response body is string', () => {
         it('should return undefined if messageType is 8 and transactionCode is for purchase with 3DSec', () => {
           const paymentSuccessData = 'messageType=8&merchantRespCP=1047&merchantRespTid=00004787&merchantRespMerchantRef=52&merchantRespMerchantSession=S20210714100158&merchantRespPurchaseAmount=89&merchantRespMessageID=Zo23nJ2P9C3i3e5Z70K1&merchantRespPan=************4242&merchantResp=C&merchantRespErrorCode=&merchantRespErrorDescription=&merchantRespErrorDetail=&languageMessages=pt&merchantRespTimeStamp=2021-07-14%2010%3A01%3A58&merchantRespReferenceNumber=&merchantRespEntityCode=&merchantRespClientReceipt=&merchantRespAdditionalErrorMessage=&merchantRespReloadCode=&resultFingerPrint=j2hcuvti%2B1GUtdm8FiLr%2FB7MyT7OBKnswL6AnKy2LTGTRx0CBojFCvkzsyM3Z8Z%2BIzdF0%2FRxta%2FY2B9D9aRqKA%3D%3D&UserCancelled=false&resultFingerPrintVersion=1';
 
@@ -217,14 +217,67 @@ describe('SISP Payment', () => {
           const sisp = new Sisp({ posID, posAutCode, url });
 
           const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, {
-            acctID: "xpto",
-            email: "carlos@email.com",
-            billAddrCountry: "123",
+            acctID: 'xpto',
+            email: 'carlos@email.com',
+            billAddrCountry: '123',
             mobilePhone: {
               // Cape Verd country code
-              cc: "123",
-              subscriber: "2389573234"
-            },
+              cc: '123',
+              subscriber: '2389573234'
+            }
+          });
+
+          const formExpected = successDataForPurchaseFormWith3DSec.replace(/\s/g, '');
+
+          const result = sisp.validatePayment(paymentSuccessData);
+          const expected = undefined;
+
+          expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+          expect(result).toEqual(expected);
+        });
+      });
+
+      describe('Successful Payment when response body is JSON', () => {
+        it('should return undefined if messageType is 8 and transactionCode is for purchase with 3DSec', () => {
+          const paymentSuccessData = {
+            messageType: '8',
+            merchantRespCP: '1047',
+            merchantRespTid: '00004787',
+            merchantRespMerchantRef: '52',
+            merchantRespMerchantSession: 'S20210714100158',
+            merchantRespPurchaseAmount: '89',
+            merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+            merchantRespPan: '************4242',
+            merchantResp: 'C',
+            merchantRespErrorCode: '',
+            merchantRespErrorDescription: '',
+            merchantRespErrorDetail: '',
+            languageMessages: 'pt',
+            merchantRespTimeStamp: '2021-07-14 10:01:58',
+            merchantRespReferenceNumber: '',
+            merchantRespEntityCode: '',
+            merchantRespClientReceipt: '',
+            merchantRespAdditionalErrorMessage: '',
+            merchantRespReloadCode: '',
+            resultFingerPrint: 'j2hcuvti+1GUtdm8FiLr/B7MyT7OBKnswL6AnKy2LTGTRx0CBojFCvkzsyM3Z8Z+IzdF0/Rxta/Y2B9D9aRqKA==',
+            UserCancelled: 'false',
+            resultFingerPrintVersion: '1'
+          };
+
+          const referenceId = '1:3:testForm';
+          const total = 89;
+
+          const sisp = new Sisp({ posID, posAutCode, url });
+
+          const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, {
+            acctID: 'xpto',
+            email: 'carlos@email.com',
+            billAddrCountry: '123',
+            mobilePhone: {
+              // Cape Verd country code
+              cc: '123',
+              subscriber: '2389573234'
+            }
           });
 
           const formExpected = successDataForPurchaseFormWith3DSec.replace(/\s/g, '');
@@ -239,7 +292,7 @@ describe('SISP Payment', () => {
     });
   });
 
-  describe('Error Payment', () => {
+  describe('Error Payment when response body is string', () => {
 
     it('should return code 003 if messageType is different from "8", "M", "P", "A", "B" or "C"', () => {
       const invalidPaymentData = 'messageType=D&merchantRespCP=1047&merchantRespTid=00004787&merchantRespMerchantRef=52&merchantRespMerchantSession=S20200626121231&merchantRespPurchaseAmount=400.00&merchantRespMessageID=Zo23nJ2P9C3i3e5Z70K1&merchantRespPan=************4242&merchantResp=C&merchantRespErrorCode=&merchantRespErrorDescription=&merchantRespErrorDetail=&languageMessages=pt&merchantRespTimeStamp=2020-06-26+12%3A11%3A01&merchantRespReferenceNumber=&merchantRespEntityCode=&merchantRespClientReceipt=&merchantRespAdditionalErrorMessage=&merchantRespReloadCode=&resultFingerPrint=GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr%2B%2FVocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA%3D%3D&UserCancelled=false&resultFingerPrintVersion=1';
@@ -249,14 +302,14 @@ describe('SISP Payment', () => {
 
       const sisp = new Sisp({ posID, posAutCode, url });
       const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, {
-        acctID: "xpto",
-        email: "carlos@email.com",
-        billAddrCountry: "123",
+        acctID: 'xpto',
+        email: 'carlos@email.com',
+        billAddrCountry: '123',
         mobilePhone: {
           // Cape Verd country code
-          cc: "123",
-          subscriber: "2389573234"
-        },
+          cc: '123',
+          subscriber: '2389573234'
+        }
       });
 
       const formExpected = successDataForPurchaseFormWith3DSec.replace(/\s/g, '');
@@ -276,13 +329,13 @@ describe('SISP Payment', () => {
 
       const sisp = new Sisp({ posID, posAutCode, url });
       const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, {
-        acctID: "xpto",
-        email: "carlos@email.com",
-        billAddrCountry: "123",
+        acctID: 'xpto',
+        email: 'carlos@email.com',
+        billAddrCountry: '123',
         mobilePhone: {
           // Cape Verd country code
-          cc: "123",
-          subscriber: "2389573234"
+          cc: '123',
+          subscriber: '2389573234'
         },
       });
 
@@ -303,14 +356,167 @@ describe('SISP Payment', () => {
 
       const sisp = new Sisp({ posID, posAutCode, url });
       const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, {
-        acctID: "xpto",
-        email: "carlos@email.com",
-        billAddrCountry: "123",
+        acctID: 'xpto',
+        email: 'carlos@email.com',
+        billAddrCountry: '123',
         mobilePhone: {
           // Cape Verd country code
-          cc: "123",
-          subscriber: "2389573234"
+          cc: '123',
+          subscriber: '2389573234'
         },
+      });
+
+      const formExpected = successDataForPurchaseFormWith3DSec.replace(/\s/g, '');
+
+      const result = sisp.validatePayment(invalidPaymentData);
+      const expected = PAYMENT_ERRORS.fingerprint;
+
+      expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+      expect(result).toEqual(expected);
+    });
+  });
+
+  describe('Error Payment when response body is JSON', () => {
+
+    it('should return code 003 if messageType is different from "8", "M", "P", "A", "B" or "C"', () => {
+      const invalidPaymentData = {
+        messageType: 'D',
+        merchantRespCP: '1047',
+        merchantRespTid: '00004787',
+        merchantRespMerchantRef: '52',
+        merchantRespMerchantSession: 'S20200626121231',
+        merchantRespPurchaseAmount: '400.00',
+        merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+        merchantRespPan: '************4242',
+        merchantResp: 'C',
+        merchantRespErrorCode: '',
+        merchantRespErrorDescription: '',
+        merchantRespErrorDetail: '',
+        languageMessages: 'pt',
+        merchantRespTimeStamp: '2020-06-26 12:11:01',
+        merchantRespReferenceNumber: '',
+        merchantRespEntityCode: '',
+        merchantRespClientReceipt: '',
+        merchantRespAdditionalErrorMessage: '',
+        merchantRespReloadCode: '',
+        resultFingerPrint: 'GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr/+VocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA==',
+        UserCancelled: 'false',
+        resultFingerPrintVersion: '1'
+      };
+
+      const referenceId = '1:3:testForm';
+      const total = 89;
+
+      const sisp = new Sisp({ posID, posAutCode, url });
+      const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, {
+        acctID: 'xpto',
+        email: 'carlos@email.com',
+        billAddrCountry: '123',
+        mobilePhone: {
+          // Cape Verd country code
+          cc: '123',
+          subscriber: '2389573234'
+        }
+      });
+
+      const formExpected = successDataForPurchaseFormWith3DSec.replace(/\s/g, '');
+
+      const result = sisp.validatePayment(invalidPaymentData);
+      const expected = PAYMENT_ERRORS.processing;
+
+      expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+      expect(result).toEqual(expected);
+    });
+
+    it('should return code 002 if user cancel payment', () => {
+      const paymentResponseData = {
+        messageType: '6',
+        merchantRespCP: '1047',
+        merchantRespTid: '00004787',
+        merchantRespMerchantRef: '52',
+        merchantRespMerchantSession: 'S20200626121231',
+        merchantRespPurchaseAmount: '400.00',
+        merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+        merchantRespPan: '************4242',
+        merchantResp: 'C',
+        merchantRespErrorCode: '',
+        merchantRespErrorDescription: '',
+        merchantRespErrorDetail: '',
+        languageMessages: 'pt',
+        merchantRespTimeStamp: '2020-06-26 12:11:01',
+        merchantRespReferenceNumber: '',
+        merchantRespEntityCode: '',
+        merchantRespClientReceipt: '',
+        merchantRespAdditionalErrorMessage: '',
+        merchantRespReloadCode: '',
+        resultFingerPrint: 'GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr/_/VocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA==',
+        UserCancelled: 'true',
+        resultFingerPrintVersion: '1'
+      };
+
+      const referenceId = '1:3:testForm';
+      const total = 89;
+
+      const sisp = new Sisp({ posID, posAutCode, url });
+      const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, {
+        acctID: 'xpto',
+        email: 'carlos@email.com',
+        billAddrCountry: '123',
+        mobilePhone: {
+          // Cape Verd country code
+          cc: '123',
+          subscriber: '2389573234'
+        }
+      });
+
+      const formExpected = successDataForPurchaseFormWith3DSec.replace(/\s/g, '');
+
+      const result = sisp.validatePayment(paymentResponseData);
+      const expected = PAYMENT_ERRORS.cancelled;
+
+      expect(requestFormResult.replace(/\s/g, '')).toEqual(formExpected);
+      expect(result).toEqual(expected);
+    });
+
+    it('should return code 001 if the generated fingerprint is invalid', () => {
+      const invalidPaymentData = {
+        messageType: '8',
+        merchantRespCP: '1047',
+        merchantRespTid: '00004787',
+        merchantRespMerchantRef: '52',
+        merchantRespMerchantSession: 'S20200626121231',
+        merchantRespPurchaseAmount: '89',
+        merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
+        merchantRespPan: '************4242',
+        merchantResp: 'C',
+        merchantRespErrorCode: '',
+        merchantRespErrorDescription: '',
+        merchantRespErrorDetail: '',
+        languageMessages: 'pt',
+        merchantRespTimeStamp: '2020-06-26 12:11:01',
+        merchantRespReferenceNumber: '',
+        merchantRespEntityCode: '',
+        merchantRespClientReceipt: '',
+        merchantRespAdditionalErrorMessage: '',
+        merchantRespReloadCode: '',
+        resultFingerPrint: 'GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr/_/VocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA==',
+        UserCancelled: true,
+        resultFingerPrintVersion: '1'
+      };
+
+      const referenceId = '1:3:testForm';
+      const total = 89;
+
+      const sisp = new Sisp({ posID, posAutCode, url });
+      const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, {
+        acctID: 'xpto',
+        email: 'carlos@email.com',
+        billAddrCountry: '123',
+        mobilePhone: {
+          // Cape Verd country code
+          cc: '123',
+          subscriber: '2389573234'
+        }
       });
 
       const formExpected = successDataForPurchaseFormWith3DSec.replace(/\s/g, '');
@@ -325,44 +531,21 @@ describe('SISP Payment', () => {
 
   describe('Format Error', () => {
     it('should return invalid format if the validatePayment parameter is not an x-www-form-urlencoded', () => {
-      const invalidPaymentData = {
-        languageMessages: 'pt',
-        merchantResp: 'C',
-        merchantRespAdditionalErrorMessage: '',
-        merchantRespCP: '1047',
-        merchantRespClientReceipt: '',
-        merchantRespEntityCode: '',
-        merchantRespErrorCode: '',
-        merchantRespErrorDescription: '',
-        merchantRespErrorDetail: '',
-        merchantRespMerchantRef: '52',
-        merchantRespMerchantSession: 'S20200626121231',
-        merchantRespMessageID: 'Zo23nJ2P9C3i3e5Z70K1',
-        merchantRespPan: '************4242',
-        merchantRespPurchaseAmount: '400.00',
-        merchantRespReferenceNumber: '',
-        merchantRespReloadCode: '',
-        merchantRespTid: '00004787',
-        merchantRespTimeStamp: '2020-06-26 12:11:01',
-        messageType: '8',
-        resultFingerPrint: 'GXtUrKOwPtZwTbGiuDEjERoPvsmAUOCB9HRC2Smr+/VocZVluiTzmgbquPJpjPz3yuW0Ouhz05lRWUfF02mJtA==',
-        resultFingerPrintVersion: '1',
-        UserCancelled: 'false'
-      };
+      const invalidPaymentData = 999;
 
       const referenceId = '1:3:testForm';
       const total = 89;
 
       const sisp = new Sisp({ posID, posAutCode, url });
       const requestFormResult = sisp.generatePaymentRequestForm(referenceId, total, webhookUrl, {
-        acctID: "xpto",
-        email: "carlos@email.com",
-        billAddrCountry: "123",
+        acctID: 'xpto',
+        email: 'carlos@email.com',
+        billAddrCountry: '123',
         mobilePhone: {
           // Cape Verd country code
-          cc: "123",
-          subscriber: "2389573234"
-        },
+          cc: '123',
+          subscriber: '2389573234'
+        }
       });
 
       const formExpected = successDataForPurchaseFormWith3DSec.replace(/\s/g, '');
