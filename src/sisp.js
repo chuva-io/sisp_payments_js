@@ -439,13 +439,16 @@ class Sisp {
       SUCCESS_MESSAGE_TYPES.token_cancel
     ];
 
-    // Expected responseBody format is x-www-form-urlencoded string
-    if (typeof responseBody != 'string') {
+    let responseBodyObject;
+    // responseBody format is x-www-form-urlencoded string
+    if (typeof responseBody === 'string' ) {
+      // Parse x-www-form-urlencoded response body to JSON format
+      responseBodyObject = qs.parse(responseBody);
+    } else if (typeof responseBody === 'object') {
+      responseBodyObject = responseBody;
+    } else {
       return FORMAT_ERRORS.invalid;
     }
-
-    // Parse x-www-form-urlencoded response body to JSON format
-    const responseBodyObject = qs.parse(responseBody);
 
     if (successMessageTypes.includes(responseBodyObject.messageType)) {
       const posAutCode = this.posAutCode;
@@ -472,7 +475,7 @@ class Sisp {
             responseBodyObject.merchantRespReferenceNumber,
             responseBodyObject.merchantRespEntityCode,
             responseBodyObject.merchantRespClientReceipt,
-            responseBodyObject.merchantRespAdditionalErrorMessage, 
+            responseBodyObject.merchantRespAdditionalErrorMessage,
             responseBodyObject.merchantRespReloadCode
           );
           break;
