@@ -1,6 +1,6 @@
 {
   "name": "@chuva.io/sisp",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "This module simplifies getting started with processing Vinti4, Visa, and Mastercard payments using SISP on Node.js.",
   "main": "./src/index.js",
   "scripts": {
